@@ -226,9 +226,10 @@ body {
 
 .card.primary {
     background: linear-gradient(135deg, #667eea, #764ba2);
-    border: 2px solid #fff;
+    border: 2px solid rgba(255, 255, 255, 0.3);
     box-shadow: 0 6px 12px rgba(102, 126, 234, 0.3);
     transform: scale(1.02);
+    position: relative;
 }
 
 .card.warning {
@@ -238,38 +239,49 @@ body {
 .card-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     margin-bottom: 15px;
+    gap: 15px;
+}
+
+.card-header h4 {
+    margin: 0;
+    flex: 1;
 }
 
 .time-toggle {
     display: flex;
-    gap: 4px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 8px;
-    padding: 4px;
+    gap: 2px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    padding: 2px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    flex-shrink: 0;
 }
 
 .toggle-btn {
     background: transparent;
     border: none;
     color: white;
-    padding: 6px 12px;
-    border-radius: 6px;
+    padding: 4px 8px;
+    border-radius: 4px;
     cursor: pointer;
     font-weight: 600;
-    font-size: 0.9rem;
-    transition: all 0.3s ease;
-    min-width: 32px;
+    font-size: 0.8rem;
+    transition: all 0.2s ease;
+    min-width: 28px;
+    opacity: 0.7;
 }
 
 .toggle-btn:hover {
     background: rgba(255, 255, 255, 0.2);
+    opacity: 0.9;
 }
 
 .toggle-btn.active {
-    background: rgba(255, 255, 255, 0.3);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    background: rgba(255, 255, 255, 0.25);
+    opacity: 1;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .card h4 {
@@ -661,13 +673,24 @@ tr:hover {
     }
     
     .card-header {
-        flex-direction: column;
+        flex-direction: row;
+        align-items: flex-start;
         gap: 10px;
-        align-items: center;
+    }
+    
+    .card-header h4 {
+        font-size: 0.9rem;
+        line-height: 1.2;
     }
     
     .time-toggle {
-        margin-top: 5px;
+        margin-top: 2px;
+    }
+    
+    .toggle-btn {
+        padding: 3px 6px;
+        font-size: 0.7rem;
+        min-width: 24px;
     }
     
     .export-buttons {
