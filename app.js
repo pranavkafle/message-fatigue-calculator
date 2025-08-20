@@ -20,6 +20,9 @@ class MessageFatigueCalculator {
         // Time period for metrics display
         this.currentTimePeriod = 'daily';
         
+        // Risk level for display
+        this.currentRiskLevel = 'high';
+        
         this.initializeEventListeners();
     }
 
@@ -76,6 +79,11 @@ class MessageFatigueCalculator {
         // Time period toggle events
         document.querySelectorAll('.toggle-btn').forEach(btn => {
             btn.addEventListener('click', () => this.handleTimePeriodChange(btn.dataset.period));
+        });
+
+        // Risk level toggle events
+        document.querySelectorAll('.risk-btn').forEach(btn => {
+            btn.addEventListener('click', () => this.handleRiskLevelChange(btn.dataset.risk));
         });
 
         // Export events
@@ -319,10 +327,10 @@ class MessageFatigueCalculator {
         // Update summary cards
         document.getElementById('totalMessages').textContent = this.processedData.summary.totalMessages.toLocaleString();
         document.getElementById('uniqueUsers').textContent = this.processedData.summary.uniqueUsers.toLocaleString();
-        document.getElementById('highFreqUsers').textContent = this.processedData.summary.highFreqUsers.toLocaleString();
         
-        // Update average metric based on current time period
+        // Update dynamic metrics based on current selections
         this.updateAverageMetric();
+        this.updateRiskMetric();
 
         // Create charts
         this.createCharts();
@@ -746,6 +754,54 @@ class MessageFatigueCalculator {
         
         titleElement.textContent = `${emoji} ${title}`;
         metricElement.textContent = value;
+    }
+
+    // Risk level toggle methods
+    handleRiskLevelChange(riskLevel) {
+        this.currentRiskLevel = riskLevel;
+        
+        // Update active button
+        document.querySelectorAll('.risk-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.querySelector(`[data-risk="${riskLevel}"]`).classList.add('active');
+        
+        // Update metric display
+        this.updateRiskMetric();
+    }
+
+    updateRiskMetric() {
+        const titleElement = document.getElementById('riskMetricTitle');
+        const metricElement = document.getElementById('riskMetric');
+        
+        let value, title, emoji;
+        
+        const riskCounts = {
+            high: this.processedData.users.filter(user => user.riskLevel === 'high').length,
+            medium: this.processedData.users.filter(user => user.riskLevel === 'medium').length,
+            low: this.processedData.users.filter(user => user.riskLevel === 'low').length
+        };
+        
+        switch(this.currentRiskLevel) {
+            case 'high':
+                value = riskCounts.high;
+                title = 'High-Risk Users';
+                emoji = '⚠️';
+                break;
+            case 'medium':
+                value = riskCounts.medium;
+                title = 'Medium-Risk Users';
+                emoji = '⚡';
+                break;
+            case 'low':
+                value = riskCounts.low;
+                title = 'Low-Risk Users';
+                emoji = '✅';
+                break;
+        }
+        
+        titleElement.textContent = `${emoji} ${title}`;
+        metricElement.textContent = value.toLocaleString();
     }
 
     // Message filtering and pagination methods

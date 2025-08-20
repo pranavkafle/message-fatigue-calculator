@@ -76,8 +76,13 @@
                     </div>
                 </div>
                 <div class="card warning">
-                    <h4>⚠️ High-Frequency Users</h4>
-                    <div class="metric" id="highFreqUsers">-</div>
+                    <h4 id="riskMetricTitle">⚠️ High-Risk Users</h4>
+                    <div class="metric" id="riskMetric">-</div>
+                    <div class="risk-toggle">
+                        <button class="risk-btn active" data-risk="high">High</button>
+                        <button class="risk-btn" data-risk="medium">Medium</button>
+                        <button class="risk-btn" data-risk="low">Low</button>
+                    </div>
                 </div>
                 <div class="card">
                     <h4>📈 Total Messages</h4>
