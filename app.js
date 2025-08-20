@@ -5,6 +5,10 @@ class MessageFatigueCalculator {
         this.processedData = null;
         this.charts = {};
         this.filteredUsers = [];
+        this.currentPage = 1;
+        this.pageSize = 50;
+        this.sortColumn = null;
+        this.sortDirection = 'asc';
         
         this.initializeEventListeners();
     }
@@ -30,6 +34,18 @@ class MessageFatigueCalculator {
         // Search and filter events
         document.getElementById('userSearch').addEventListener('input', this.filterUsers.bind(this));
         document.getElementById('riskFilter').addEventListener('change', this.filterUsers.bind(this));
+        document.getElementById('pageSize').addEventListener('change', this.handlePageSizeChange.bind(this));
+
+        // Pagination events
+        document.getElementById('firstPage').addEventListener('click', () => this.goToPage(1));
+        document.getElementById('prevPage').addEventListener('click', () => this.goToPage(this.currentPage - 1));
+        document.getElementById('nextPage').addEventListener('click', () => this.goToPage(this.currentPage + 1));
+        document.getElementById('lastPage').addEventListener('click', () => this.goToPage(this.getTotalPages()));
+
+        // Sorting events
+        document.querySelectorAll('.sortable').forEach(header => {
+            header.addEventListener('click', () => this.handleSort(header.dataset.sort));
+        });
 
         // Export events
         document.getElementById('exportCsv').addEventListener('click', this.exportCSV.bind(this));
@@ -366,8 +382,8 @@ class MessageFatigueCalculator {
     }
 
     populateUserTable() {
-        const tbody = document.getElementById('userTableBody');
         this.filteredUsers = [...this.processedData.users];
+        this.currentPage = 1;
         this.renderUserTable();
     }
 
@@ -375,11 +391,26 @@ class MessageFatigueCalculator {
         const tbody = document.getElementById('userTableBody');
         tbody.innerHTML = '';
 
-        this.filteredUsers.forEach(user => {
+        // Apply sorting
+        this.applySorting();
+
+        // Calculate pagination
+        const totalUsers = this.filteredUsers.length;
+        const totalPages = this.getTotalPages();
+        const startIndex = (this.currentPage - 1) * this.pageSize;
+        const endIndex = this.pageSize === 'all' ? totalUsers : Math.min(startIndex + parseInt(this.pageSize), totalUsers);
+        
+        // Get current page users
+        const currentPageUsers = this.pageSize === 'all' ? 
+            this.filteredUsers : 
+            this.filteredUsers.slice(startIndex, endIndex);
+
+        // Render table rows
+        currentPageUsers.forEach(user => {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${user.email}</td>
-                <td>${user.totalMessages}</td>
+                <td>${user.totalMessages.toLocaleString()}</td>
                 <td>${user.dailyAvg}</td>
                 <td>${user.weeklyAvg}</td>
                 <td>${user.monthlyAvg}</td>
@@ -387,6 +418,13 @@ class MessageFatigueCalculator {
             `;
             tbody.appendChild(row);
         });
+
+        // Update table info
+        document.getElementById('tableInfo').textContent = 
+            `Showing ${startIndex + 1}-${endIndex} of ${totalUsers} users`;
+
+        // Update pagination controls
+        this.updatePaginationControls();
     }
 
     populateCampaignTable() {
@@ -417,7 +455,163 @@ class MessageFatigueCalculator {
             return matchesSearch && matchesRisk;
         });
 
+        this.currentPage = 1; // Reset to first page when filtering
         this.renderUserTable();
+    }
+
+    // Pagination methods
+    handlePageSizeChange() {
+        const newPageSize = document.getElementById('pageSize').value;
+        this.pageSize = newPageSize === 'all' ? 'all' : parseInt(newPageSize);
+        this.currentPage = 1;
+        this.renderUserTable();
+    }
+
+    getTotalPages() {
+        if (this.pageSize === 'all') return 1;
+        return Math.ceil(this.filteredUsers.length / this.pageSize);
+    }
+
+    goToPage(page) {
+        const totalPages = this.getTotalPages();
+        if (page >= 1 && page <= totalPages) {
+            this.currentPage = page;
+            this.renderUserTable();
+        }
+    }
+
+    updatePaginationControls() {
+        const totalPages = this.getTotalPages();
+        const paginationControls = document.getElementById('paginationControls');
+        
+        if (this.pageSize === 'all' || totalPages <= 1) {
+            paginationControls.style.display = 'none';
+            return;
+        }
+        
+        paginationControls.style.display = 'flex';
+
+        // Update pagination info
+        document.getElementById('paginationInfo').textContent = 
+            `Page ${this.currentPage} of ${totalPages}`;
+
+        // Update button states
+        document.getElementById('firstPage').disabled = this.currentPage === 1;
+        document.getElementById('prevPage').disabled = this.currentPage === 1;
+        document.getElementById('nextPage').disabled = this.currentPage === totalPages;
+        document.getElementById('lastPage').disabled = this.currentPage === totalPages;
+
+        // Update page numbers
+        this.renderPageNumbers();
+    }
+
+    renderPageNumbers() {
+        const pageNumbers = document.getElementById('pageNumbers');
+        pageNumbers.innerHTML = '';
+        
+        const totalPages = this.getTotalPages();
+        const current = this.currentPage;
+        
+        // Calculate which page numbers to show
+        let startPage = Math.max(1, current - 2);
+        let endPage = Math.min(totalPages, current + 2);
+        
+        // Adjust range if we're near the beginning or end
+        if (current <= 3) {
+            endPage = Math.min(5, totalPages);
+        } else if (current >= totalPages - 2) {
+            startPage = Math.max(totalPages - 4, 1);
+        }
+
+        // Add first page if not in range
+        if (startPage > 1) {
+            this.createPageNumber(1);
+            if (startPage > 2) {
+                this.createPageNumber('...', true);
+            }
+        }
+
+        // Add page range
+        for (let i = startPage; i <= endPage; i++) {
+            this.createPageNumber(i);
+        }
+
+        // Add last page if not in range
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                this.createPageNumber('...', true);
+            }
+            this.createPageNumber(totalPages);
+        }
+    }
+
+    createPageNumber(pageNum, isEllipsis = false) {
+        const pageNumbers = document.getElementById('pageNumbers');
+        const span = document.createElement('span');
+        span.className = `page-number ${isEllipsis ? 'ellipsis' : ''} ${pageNum === this.currentPage ? 'active' : ''}`;
+        span.textContent = pageNum;
+        
+        if (!isEllipsis) {
+            span.addEventListener('click', () => this.goToPage(pageNum));
+        }
+        
+        pageNumbers.appendChild(span);
+    }
+
+    // Sorting methods
+    handleSort(column) {
+        if (this.sortColumn === column) {
+            this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            this.sortColumn = column;
+            this.sortDirection = 'asc';
+        }
+        
+        this.updateSortIndicators();
+        this.renderUserTable();
+    }
+
+    updateSortIndicators() {
+        // Clear all sort indicators
+        document.querySelectorAll('.sortable').forEach(header => {
+            header.classList.remove('sort-asc', 'sort-desc');
+        });
+        
+        // Add indicator to current sort column
+        if (this.sortColumn) {
+            const header = document.querySelector(`[data-sort="${this.sortColumn}"]`);
+            if (header) {
+                header.classList.add(`sort-${this.sortDirection}`);
+            }
+        }
+    }
+
+    applySorting() {
+        if (!this.sortColumn) return;
+
+        this.filteredUsers.sort((a, b) => {
+            let valueA = a[this.sortColumn];
+            let valueB = b[this.sortColumn];
+
+            // Handle different data types
+            if (this.sortColumn === 'email') {
+                valueA = valueA.toLowerCase();
+                valueB = valueB.toLowerCase();
+            } else if (typeof valueA === 'number') {
+                // Already numbers, no conversion needed
+            } else if (this.sortColumn === 'riskLevel') {
+                // Convert risk levels to numbers for sorting
+                const riskOrder = { 'low': 1, 'medium': 2, 'high': 3 };
+                valueA = riskOrder[valueA];
+                valueB = riskOrder[valueB];
+            }
+
+            if (this.sortDirection === 'asc') {
+                return valueA < valueB ? -1 : valueA > valueB ? 1 : 0;
+            } else {
+                return valueA > valueB ? -1 : valueA < valueB ? 1 : 0;
+            }
+        });
     }
 
     // Export methods

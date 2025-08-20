@@ -287,7 +287,7 @@ body {
 .table-controls {
     display: flex;
     gap: 15px;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     flex-wrap: wrap;
 }
 
@@ -301,6 +301,15 @@ body {
 .search-input {
     flex: 1;
     min-width: 200px;
+}
+
+.table-info {
+    margin-bottom: 15px;
+    padding: 8px 12px;
+    background: #e9ecef;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    color: #495057;
 }
 
 .table-wrapper {
@@ -327,6 +336,36 @@ th {
     font-weight: 600;
     position: sticky;
     top: 0;
+}
+
+th.sortable {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+}
+
+th.sortable:hover {
+    background: #5a6fd8;
+}
+
+.sort-indicator {
+    display: inline-block;
+    margin-left: 5px;
+    opacity: 0.5;
+}
+
+.sort-indicator:after {
+    content: '⬍';
+}
+
+th.sort-asc .sort-indicator:after {
+    content: '⬆️';
+    opacity: 1;
+}
+
+th.sort-desc .sort-indicator:after {
+    content: '⬇️';
+    opacity: 1;
 }
 
 tr:hover {
@@ -358,6 +397,91 @@ tr:hover {
     border-radius: 12px;
     font-size: 0.8rem;
     font-weight: bold;
+}
+
+/* Pagination */
+.pagination-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    padding: 15px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.pagination-info {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.pagination-buttons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.pagination-btn {
+    padding: 6px 12px;
+    border: 1px solid #ddd;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.page-numbers {
+    display: flex;
+    gap: 5px;
+}
+
+.page-number {
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    min-width: 35px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.page-number:hover {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+
+.page-number.active {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+    font-weight: bold;
+}
+
+.page-number.ellipsis {
+    cursor: default;
+    background: transparent;
+    border: none;
+}
+
+.page-number.ellipsis:hover {
+    background: transparent;
+    color: inherit;
 }
 
 /* Export Section */
@@ -469,5 +593,26 @@ tr:hover {
     
     .metric {
         font-size: 2rem;
+    }
+    
+    .pagination-controls {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .pagination-buttons {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .pagination-btn {
+        font-size: 0.8rem;
+        padding: 4px 8px;
+    }
+    
+    .page-number {
+        font-size: 0.8rem;
+        padding: 4px 8px;
+        min-width: 30px;
     }
 }

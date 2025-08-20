@@ -108,21 +108,54 @@
                             <option value="medium">Medium Risk</option>
                             <option value="low">Low Risk</option>
                         </select>
+                        <select id="pageSize" class="filter-select">
+                            <option value="25">25 per page</option>
+                            <option value="50" selected>50 per page</option>
+                            <option value="100">100 per page</option>
+                            <option value="all">Show all</option>
+                        </select>
+                    </div>
+                    <div class="table-info">
+                        <span id="tableInfo">Showing 0 of 0 users</span>
                     </div>
                     <div class="table-wrapper">
                         <table id="userTable">
                             <thead>
                                 <tr>
-                                    <th>Email</th>
-                                    <th>Total Messages</th>
-                                    <th>Daily Avg</th>
-                                    <th>Weekly Avg</th>
-                                    <th>Monthly Avg</th>
-                                    <th>Risk Level</th>
+                                    <th class="sortable" data-sort="email">
+                                        Email <span class="sort-indicator"></span>
+                                    </th>
+                                    <th class="sortable" data-sort="totalMessages">
+                                        Total Messages <span class="sort-indicator"></span>
+                                    </th>
+                                    <th class="sortable" data-sort="dailyAvg">
+                                        Daily Avg <span class="sort-indicator"></span>
+                                    </th>
+                                    <th class="sortable" data-sort="weeklyAvg">
+                                        Weekly Avg <span class="sort-indicator"></span>
+                                    </th>
+                                    <th class="sortable" data-sort="monthlyAvg">
+                                        Monthly Avg <span class="sort-indicator"></span>
+                                    </th>
+                                    <th class="sortable" data-sort="riskLevel">
+                                        Risk Level <span class="sort-indicator"></span>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody id="userTableBody"></tbody>
                         </table>
+                    </div>
+                    <div class="pagination-controls" id="paginationControls" style="display: none;">
+                        <div class="pagination-info">
+                            <span id="paginationInfo">Page 1 of 1</span>
+                        </div>
+                        <div class="pagination-buttons">
+                            <button id="firstPage" class="pagination-btn">⏮️ First</button>
+                            <button id="prevPage" class="pagination-btn">⬅️ Previous</button>
+                            <span class="page-numbers" id="pageNumbers"></span>
+                            <button id="nextPage" class="pagination-btn">Next ➡️</button>
+                            <button id="lastPage" class="pagination-btn">Last ⏭️</button>
+                        </div>
                     </div>
                 </div>
 
