@@ -1,48 +1,23 @@
-/* Reset and Base Styles */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
 /* CSS Custom Properties - Design System */
 :root {
-    /* Primary Colors */
-    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    --warning-gradient: linear-gradient(135deg, #ff7675 0%, #fd79a8 100%);
-    --success-gradient: linear-gradient(135deg, #26de81 0%, #2ed573 100%);
-    
-    /* Secondary Colors */
-    --evergreen: #0B353B;
-    --verdant: #E4FFCE;
-    --arctic: #B8E6FF;
-    --cosmic: #FFB366;
+    /* Brand Colors */
+    --primary-gradient: linear-gradient(135deg, #667eea, #764ba2);
+    --warning-gradient: linear-gradient(135deg, #ff7675, #fd79a8);
+    --success-gradient: linear-gradient(135deg, #26de81, #2ed573);
+    --info-gradient: linear-gradient(135deg, #45aaf2, #26de81);
     
     /* Neutral Colors */
     --charcoal: #2C2C2C;
-    --warm-gray-300: #CFCFCE;
-    --warm-gray-200: #E9E9E8;
-    --warm-gray-100: #F5F5F4;
+    --warm-gray-300: #BBBAB9;
+    --warm-gray-200: #CFCFCE;
+    --warm-gray-100: #E9E9E8;
     --white: #FFFFFF;
     
-    /* Typography */
-    --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Instrument Sans', sans-serif;
-    --font-size-xxl: 3rem;      /* 48px - Hero headings */
-    --font-size-xl: 2.5rem;     /* 40px - Section headings */
-    --font-size-h1: 2rem;       /* 32px - Page titles */
-    --font-size-h2: 1.5rem;     /* 24px - Card titles */
-    --font-size-h3: 1.25rem;    /* 20px - Subsection titles */
-    --font-size-lg: 1.125rem;   /* 18px - Important body */
-    --font-size-body: 1rem;     /* 16px - Standard body */
-    --font-size-sm: 0.875rem;   /* 14px - Small text */
-    --font-size-xs: 0.75rem;    /* 12px - Labels */
-    
-    /* Font Weights */
-    --font-weight-light: 300;
-    --font-weight-regular: 400;
-    --font-weight-medium: 500;
-    --font-weight-semibold: 600;
-    --font-weight-bold: 700;
+    /* Semantic Colors */
+    --evergreen: #0B353B;
+    --verdant: #E4FFCE;
+    --arctic: #B8E6E6;
+    --cosmic: #FFB347;
     
     /* Spacing Scale (8px base) */
     --spacing-xs: 4px;
@@ -57,18 +32,32 @@
     --radius-md: 8px;
     --radius-lg: 12px;
     --radius-xl: 16px;
-    --radius-full: 50%;
+    --radius-round: 50%;
     
     /* Shadows */
-    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
-    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
-    --shadow-lg: 0 6px 12px rgba(0, 0, 0, 0.15);
-    --shadow-xl: 0 8px 16px rgba(0, 0, 0, 0.2);
+    --shadow-sm: 0 2px 4px rgba(0,0,0,0.1);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+    --shadow-lg: 0 6px 12px rgba(0,0,0,0.15);
+    --shadow-primary: 0 6px 12px rgba(102, 126, 234, 0.3);
     
-    /* Transitions */
-    --transition-fast: all 0.2s ease;
-    --transition-standard: all 0.3s ease;
-    --transition-slow: all 0.5s ease;
+    /* Typography */
+    --font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    --font-size-eyebrow: 0.75rem;
+    --font-size-small: 0.875rem;
+    --font-size-body: 1rem;
+    --font-size-body-lg: 1.125rem;
+    --font-size-h3: 1.25rem;
+    --font-size-h2: 1.5rem;
+    --font-size-h1: 2rem;
+    --font-size-xl: 2.5rem;
+    --font-size-xxl: 3rem;
+}
+
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 body {
@@ -77,15 +66,13 @@ body {
     color: var(--charcoal);
     background: var(--primary-gradient);
     min-height: 100vh;
-    font-size: var(--font-size-body);
-    font-weight: var(--font-weight-regular);
 }
 
 /* Container */
 .container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: var(--spacing-lg);
+    padding: 20px;
 }
 
 /* Header */
@@ -97,15 +84,15 @@ body {
 
 .header h1 {
     font-size: var(--font-size-xxl);
-    font-weight: var(--font-weight-bold);
-    margin-bottom: var(--spacing-md);
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    letter-spacing: -0.5px;
+    font-weight: 600;
+    margin-bottom: var(--spacing-sm);
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    letter-spacing: -0.02em;
 }
 
 .subtitle {
-    font-size: var(--font-size-lg);
-    font-weight: var(--font-weight-regular);
+    font-size: var(--font-size-body-lg);
+    font-weight: 400;
     margin-bottom: var(--spacing-lg);
     opacity: 0.9;
     max-width: 600px;
@@ -117,23 +104,17 @@ body {
     display: inline-flex;
     align-items: center;
     gap: var(--spacing-sm);
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255,255,255,0.15);
     padding: var(--spacing-sm) var(--spacing-md);
-    border-radius: var(--radius-full);
+    border-radius: var(--radius-xl);
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-medium);
-    transition: var(--transition-standard);
-}
-
-.privacy-badge:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-1px);
+    border: 1px solid rgba(255,255,255,0.2);
+    font-size: var(--font-size-small);
+    font-weight: 500;
 }
 
 .shield {
-    font-size: var(--font-size-lg);
+    font-size: 1.2rem;
 }
 
 /* Upload Section */
@@ -143,82 +124,66 @@ body {
 
 .upload-area {
     background: var(--white);
-    border: 2px dashed var(--warm-gray-300);
+    border: 2px dashed var(--warm-gray-200);
     border-radius: var(--radius-lg);
     padding: var(--spacing-xxl) var(--spacing-lg);
     text-align: center;
-    transition: var(--transition-standard);
+    transition: all 0.3s ease;
     cursor: pointer;
-    box-shadow: var(--shadow-sm);
 }
 
 .upload-area:hover {
     border-color: #667eea;
     background: #f8f9ff;
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
 }
 
 .upload-area.dragover {
     border-color: #667eea;
     background: #f0f4ff;
-    transform: scale(1.01);
-    box-shadow: var(--shadow-lg);
+    transform: scale(1.02);
 }
 
 .upload-icon {
     font-size: 4rem;
-    margin-bottom: var(--spacing-lg);
-    color: var(--charcoal);
+    margin-bottom: 20px;
 }
 
 .upload-content h3 {
     font-size: var(--font-size-h2);
-    font-weight: var(--font-weight-semibold);
-    margin-bottom: var(--spacing-md);
+    font-weight: 600;
+    margin-bottom: var(--spacing-sm);
     color: var(--charcoal);
-}
-
-.upload-content p {
-    font-size: var(--font-size-body);
-    color: var(--charcoal);
-    margin-bottom: var(--spacing-lg);
+    letter-spacing: -0.01em;
 }
 
 .browse-btn {
-    background: #667eea;
+    background: var(--primary-gradient);
     color: var(--white);
     border: none;
     padding: var(--spacing-sm) var(--spacing-md);
     border-radius: var(--radius-md);
     cursor: pointer;
     font-size: var(--font-size-body);
-    font-weight: var(--font-weight-medium);
-    transition: var(--transition-standard);
+    font-weight: 500;
+    transition: all 0.3s ease;
 }
 
 .browse-btn:hover {
-    background: #5a6fd8;
     transform: translateY(-1px);
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-md);
 }
 
 .file-requirements {
-    margin-top: var(--spacing-lg);
-    padding: var(--spacing-md);
-    background: var(--warm-gray-100);
-    border-radius: var(--radius-md);
+    margin-top: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
     border-left: 4px solid #667eea;
 }
 
 .file-requirements p {
-    margin: var(--spacing-xs) 0;
-    font-size: var(--font-size-sm);
-    color: var(--charcoal);
-}
-
-.file-requirements strong {
-    font-weight: var(--font-weight-semibold);
+    margin: 5px 0;
+    font-size: 0.9rem;
 }
 
 /* Upload Status */
@@ -329,30 +294,18 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 120px;
-    transition: var(--transition-standard);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
 }
 
 .card.primary {
     background: var(--primary-gradient);
     border: 2px solid rgba(255, 255, 255, 0.2);
-    box-shadow: var(--shadow-lg);
-    transform: scale(1.01);
+    box-shadow: var(--shadow-primary);
+    transform: scale(1.02);
     position: relative;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     min-height: 140px;
-}
-
-.card.primary:hover {
-    transform: scale(1.01) translateY(-2px);
-    box-shadow: var(--shadow-xl);
 }
 
 .card.warning {
@@ -363,30 +316,15 @@ body {
     min-height: 140px;
 }
 
-.card h4 {
-    font-size: var(--font-size-body);
-    font-weight: var(--font-weight-semibold);
-    margin-bottom: var(--spacing-md);
-    opacity: 0.95;
-    letter-spacing: 0.25px;
-}
-
-.metric {
-    font-size: 2.5rem;
-    font-weight: var(--font-weight-bold);
-    line-height: 1;
-    margin: var(--spacing-sm) 0;
-}
-
 .time-toggle {
     display: flex;
-    gap: var(--spacing-xs);
+    gap: 3px;
     justify-content: center;
-    margin-top: var(--spacing-md);
+    margin-top: 15px;
     background: rgba(255, 255, 255, 0.1);
-    border-radius: var(--radius-full);
-    padding: var(--spacing-xs);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 20px;
+    padding: 3px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
     width: 100%;
     max-width: 280px;
     margin-left: auto;
@@ -396,13 +334,13 @@ body {
 .toggle-btn {
     background: transparent;
     border: none;
-    color: var(--white);
-    padding: var(--spacing-sm) var(--spacing-md);
-    border-radius: var(--radius-xl);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 16px;
     cursor: pointer;
-    font-weight: var(--font-weight-medium);
-    font-size: var(--font-size-xs);
-    transition: var(--transition-fast);
+    font-weight: 500;
+    font-size: 0.75rem;
+    transition: all 0.3s ease;
     opacity: 0.7;
     flex: 1;
     white-space: nowrap;
@@ -412,25 +350,24 @@ body {
 .toggle-btn:hover {
     background: rgba(255, 255, 255, 0.15);
     opacity: 0.9;
-    transform: translateY(-1px);
 }
 
 .toggle-btn.active {
     background: rgba(255, 255, 255, 0.25);
     opacity: 1;
-    box-shadow: var(--shadow-sm);
-    font-weight: var(--font-weight-semibold);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    font-weight: 600;
 }
 
 .risk-toggle {
     display: flex;
-    gap: var(--spacing-xs);
+    gap: 3px;
     justify-content: center;
-    margin-top: var(--spacing-md);
+    margin-top: 15px;
     background: rgba(255, 255, 255, 0.1);
-    border-radius: var(--radius-full);
-    padding: var(--spacing-xs);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 20px;
+    padding: 3px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
     width: 100%;
     max-width: 200px;
     margin-left: auto;
@@ -440,13 +377,13 @@ body {
 .risk-btn {
     background: transparent;
     border: none;
-    color: var(--white);
-    padding: var(--spacing-sm) var(--spacing-md);
-    border-radius: var(--radius-xl);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 16px;
     cursor: pointer;
-    font-weight: var(--font-weight-medium);
-    font-size: var(--font-size-xs);
-    transition: var(--transition-fast);
+    font-weight: 500;
+    font-size: 0.75rem;
+    transition: all 0.3s ease;
     opacity: 0.7;
     flex: 1;
     white-space: nowrap;
@@ -456,47 +393,43 @@ body {
 .risk-btn:hover {
     background: rgba(255, 255, 255, 0.15);
     opacity: 0.9;
-    transform: translateY(-1px);
 }
 
 .risk-btn.active {
     background: rgba(255, 255, 255, 0.25);
     opacity: 1;
-    box-shadow: var(--shadow-sm);
-    font-weight: var(--font-weight-semibold);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    font-weight: 600;
 }
 
 .card h4 {
-    font-size: 1rem;
-    margin-bottom: 10px;
+    font-size: var(--font-size-body);
+    font-weight: 500;
+    margin-bottom: var(--spacing-sm);
     opacity: 0.9;
+    letter-spacing: -0.005em;
 }
 
 .metric {
-    font-size: 2.5rem;
-    font-weight: bold;
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    letter-spacing: -0.02em;
 }
 
 /* Charts */
 .charts-container {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-    gap: var(--spacing-xl);
-    margin-bottom: var(--spacing-xxl);
+    gap: 30px;
+    margin-bottom: 40px;
 }
 
 .chart-card {
     background: var(--white);
-    padding: var(--spacing-xl);
+    padding: var(--spacing-lg);
     border-radius: var(--radius-lg);
-    border: 1px solid var(--warm-gray-200);
+    border: 1px solid var(--warm-gray-100);
     box-shadow: var(--shadow-sm);
-    transition: var(--transition-standard);
-}
-
-.chart-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
 }
 
 .chart-card h3 {
@@ -504,7 +437,8 @@ body {
     color: var(--charcoal);
     text-align: center;
     font-size: var(--font-size-h3);
-    font-weight: var(--font-weight-semibold);
+    font-weight: 600;
+    letter-spacing: -0.01em;
 }
 
 .chart-card canvas {
@@ -515,50 +449,38 @@ body {
 .tables-container {
     display: grid;
     grid-template-columns: 1fr;
-    gap: var(--spacing-xl);
-    margin-bottom: var(--spacing-xxl);
+    gap: 30px;
+    margin-bottom: 40px;
 }
 
 .table-card {
     background: var(--white);
-    padding: var(--spacing-xl);
+    padding: var(--spacing-lg);
     border-radius: var(--radius-lg);
-    border: 1px solid var(--warm-gray-200);
+    border: 1px solid var(--warm-gray-100);
     box-shadow: var(--shadow-sm);
-    transition: var(--transition-standard);
-}
-
-.table-card:hover {
-    box-shadow: var(--shadow-md);
 }
 
 .table-card h3 {
     margin-bottom: var(--spacing-lg);
     color: var(--charcoal);
     font-size: var(--font-size-h3);
-    font-weight: var(--font-weight-semibold);
+    font-weight: 600;
+    letter-spacing: -0.01em;
 }
 
 .table-controls {
     display: flex;
-    gap: var(--spacing-md);
-    margin-bottom: var(--spacing-md);
+    gap: 15px;
+    margin-bottom: 15px;
     flex-wrap: wrap;
 }
 
 .search-input, .filter-select {
-    padding: var(--spacing-sm) var(--spacing-md);
-    border: 1px solid var(--warm-gray-300);
-    border-radius: var(--radius-md);
-    font-size: var(--font-size-sm);
-    font-family: var(--font-family);
-    transition: var(--transition-fast);
-}
-
-.search-input:focus, .filter-select:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.9rem;
 }
 
 .search-input {
@@ -567,13 +489,12 @@ body {
 }
 
 .table-info {
-    margin-bottom: var(--spacing-md);
-    padding: var(--spacing-sm) var(--spacing-md);
-    background: var(--warm-gray-100);
-    border-radius: var(--radius-md);
-    font-size: var(--font-size-sm);
-    color: var(--charcoal);
-    font-weight: var(--font-weight-medium);
+    margin-bottom: 15px;
+    padding: 8px 12px;
+    background: #e9ecef;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    color: #495057;
 }
 
 .table-wrapper {
@@ -796,43 +717,46 @@ tr:hover {
 /* Export Section */
 .export-section {
     text-align: center;
-    padding: 30px;
-    background: #f8f9fa;
-    border-radius: 12px;
-    border: 1px solid #e9ecef;
+    padding: var(--spacing-xl);
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--warm-gray-100);
+    box-shadow: var(--shadow-sm);
 }
 
 .export-section h3 {
-    margin-bottom: 20px;
-    color: #333;
+    margin-bottom: var(--spacing-lg);
+    color: var(--charcoal);
+    font-size: var(--font-size-h3);
+    font-weight: 600;
+    letter-spacing: -0.01em;
 }
 
 .export-buttons {
     display: flex;
-    gap: 15px;
+    gap: var(--spacing-md);
     justify-content: center;
     flex-wrap: wrap;
 }
 
 .export-btn {
-    background: #667eea;
-    color: white;
+    background: var(--primary-gradient);
+    color: var(--white);
     border: none;
-    padding: 12px 24px;
-    border-radius: 8px;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-radius: var(--radius-md);
     cursor: pointer;
-    font-size: 1rem;
+    font-size: var(--font-size-body);
     font-weight: 500;
     transition: all 0.3s ease;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--spacing-sm);
 }
 
 .export-btn:hover {
-    background: #5a6fd8;
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    box-shadow: var(--shadow-lg);
 }
 
 /* Footer */
