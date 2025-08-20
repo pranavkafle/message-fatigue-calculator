@@ -399,6 +399,51 @@ tr:hover {
     font-weight: bold;
 }
 
+.message-type-campaign {
+    background: #667eea !important;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.message-type-newsletter {
+    background: #26de81 !important;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.message-type-transactional {
+    background: #45aaf2 !important;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.message-type-template {
+    background: #a55eea !important;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.message-type-unknown {
+    background: #95a5a6 !important;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
 /* Pagination */
 .pagination-controls {
     display: flex;

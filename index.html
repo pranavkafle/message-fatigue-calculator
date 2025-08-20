@@ -109,8 +109,8 @@
                             <option value="low">Low Risk</option>
                         </select>
                         <select id="pageSize" class="filter-select">
-                            <option value="25">25 per page</option>
-                            <option value="50" selected>50 per page</option>
+                            <option value="20" selected>20 per page</option>
+                            <option value="50">50 per page</option>
                             <option value="100">100 per page</option>
                             <option value="all">Show all</option>
                         </select>
@@ -160,19 +160,60 @@
                 </div>
 
                 <div class="table-card">
-                    <h3>📈 Campaign Analysis</h3>
+                    <h3>📈 Message Analysis</h3>
+                    <div class="table-controls">
+                        <input type="text" id="messageSearch" placeholder="Search campaigns, newsletters, templates..." class="search-input">
+                        <select id="messageType" class="filter-select">
+                            <option value="all">All Message Types</option>
+                            <option value="campaign">Campaigns</option>
+                            <option value="newsletter">Newsletters</option>
+                            <option value="transactional">Transactional</option>
+                        </select>
+                        <select id="messagePageSize" class="filter-select">
+                            <option value="20" selected>20 per page</option>
+                            <option value="50">50 per page</option>
+                            <option value="100">100 per page</option>
+                            <option value="all">Show all</option>
+                        </select>
+                    </div>
+                    <div class="table-info">
+                        <span id="messageTableInfo">Showing 0 of 0 messages</span>
+                    </div>
                     <div class="table-wrapper">
                         <table id="campaignTable">
                             <thead>
                                 <tr>
-                                    <th>Campaign</th>
-                                    <th>Messages Sent</th>
-                                    <th>Unique Recipients</th>
-                                    <th>Avg Frequency</th>
+                                    <th class="sortable" data-sort="name">
+                                        Message Name <span class="sort-indicator"></span>
+                                    </th>
+                                    <th class="sortable" data-sort="type">
+                                        Type <span class="sort-indicator"></span>
+                                    </th>
+                                    <th class="sortable" data-sort="messageCount">
+                                        Messages Sent <span class="sort-indicator"></span>
+                                    </th>
+                                    <th class="sortable" data-sort="uniqueRecipients">
+                                        Unique Recipients <span class="sort-indicator"></span>
+                                    </th>
+                                    <th class="sortable" data-sort="avgFrequency">
+                                        Avg Frequency <span class="sort-indicator"></span>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody id="campaignTableBody"></tbody>
                         </table>
+                    </div>
+                    <div class="pagination-controls" id="messagePaginationControls" style="display: none;">
+                        <div class="pagination-info">
+                            <span id="messagePaginationInfo">Page 1 of 1</span>
+                        </div>
+                        <div class="pagination-buttons">
+                            <button id="messageFirstPage" class="pagination-btn">⏮️ First</button>
+                            <button id="messagePrevPage" class="pagination-btn">⬅️ Previous</button>
+                            <span class="page-numbers" id="messagePageNumbers"></span>
+                            <button id="messageNextPage" class="pagination-btn">Next ➡️</button>
+                            <button id="messageLastPage" class="pagination-btn">Last ⏭️</button>
+                        </div>
                     </div>
                 </div>
             </div>

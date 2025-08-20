@@ -6,9 +6,16 @@ class MessageFatigueCalculator {
         this.charts = {};
         this.filteredUsers = [];
         this.currentPage = 1;
-        this.pageSize = 50;
+        this.pageSize = 20;
         this.sortColumn = null;
         this.sortDirection = 'asc';
+        
+        // Message analysis pagination
+        this.filteredMessages = [];
+        this.messageCurrentPage = 1;
+        this.messagePageSize = 20;
+        this.messageSortColumn = null;
+        this.messageSortDirection = 'asc';
         
         this.initializeEventListeners();
     }
@@ -42,9 +49,25 @@ class MessageFatigueCalculator {
         document.getElementById('nextPage').addEventListener('click', () => this.goToPage(this.currentPage + 1));
         document.getElementById('lastPage').addEventListener('click', () => this.goToPage(this.getTotalPages()));
 
-        // Sorting events
-        document.querySelectorAll('.sortable').forEach(header => {
+        // Message analysis events
+        document.getElementById('messageSearch').addEventListener('input', this.filterMessages.bind(this));
+        document.getElementById('messageType').addEventListener('change', this.filterMessages.bind(this));
+        document.getElementById('messagePageSize').addEventListener('change', this.handleMessagePageSizeChange.bind(this));
+
+        // Message pagination events
+        document.getElementById('messageFirstPage').addEventListener('click', () => this.goToMessagePage(1));
+        document.getElementById('messagePrevPage').addEventListener('click', () => this.goToMessagePage(this.messageCurrentPage - 1));
+        document.getElementById('messageNextPage').addEventListener('click', () => this.goToMessagePage(this.messageCurrentPage + 1));
+        document.getElementById('messageLastPage').addEventListener('click', () => this.goToMessagePage(this.getMessageTotalPages()));
+
+        // Sorting events - User table
+        document.querySelectorAll('#userTable .sortable').forEach(header => {
             header.addEventListener('click', () => this.handleSort(header.dataset.sort));
+        });
+
+        // Sorting events - Message table
+        document.querySelectorAll('#campaignTable .sortable').forEach(header => {
+            header.addEventListener('click', () => this.handleMessageSort(header.dataset.sort));
         });
 
         // Export events
@@ -158,7 +181,7 @@ class MessageFatigueCalculator {
 
         // Parse dates and group by user
         const userMessages = {};
-        const campaignData = {};
+        const messageData = {};
         let minDate = new Date();
         let maxDate = new Date(0);
 
@@ -166,7 +189,27 @@ class MessageFatigueCalculator {
             const email = row.email || row.recipient;
             const customerId = row.customer_id;
             const createdDate = new Date(row.created_RFC3339);
-            const campaignName = row.campaign_name;
+            
+            // Determine message type and name
+            let messageName = '';
+            let messageType = '';
+            
+            if (row.campaign_name) {
+                messageName = row.campaign_name;
+                messageType = 'campaign';
+            } else if (row.newsletter_name) {
+                messageName = row.newsletter_name;
+                messageType = 'newsletter';
+            } else if (row.transactional_message_name) {
+                messageName = row.transactional_message_name;
+                messageType = 'transactional';
+            } else if (row.template_name) {
+                messageName = row.template_name;
+                messageType = 'template';
+            } else {
+                messageName = 'Unknown Message';
+                messageType = 'unknown';
+            }
 
             if (!email || !customerId || isNaN(createdDate.getTime())) return;
 
@@ -185,21 +228,22 @@ class MessageFatigueCalculator {
             }
             userMessages[userKey].messages.push({
                 date: createdDate,
-                campaign: campaignName
+                message: messageName,
+                type: messageType
             });
 
-            // Group by campaign
-            if (campaignName) {
-                if (!campaignData[campaignName]) {
-                    campaignData[campaignName] = {
-                        name: campaignName,
-                        messageCount: 0,
-                        uniqueRecipients: new Set()
-                    };
-                }
-                campaignData[campaignName].messageCount++;
-                campaignData[campaignName].uniqueRecipients.add(email);
+            // Group by message
+            const messageKey = `${messageType}:${messageName}`;
+            if (!messageData[messageKey]) {
+                messageData[messageKey] = {
+                    name: messageName,
+                    type: messageType,
+                    messageCount: 0,
+                    uniqueRecipients: new Set()
+                };
             }
+            messageData[messageKey].messageCount++;
+            messageData[messageKey].uniqueRecipients.add(email);
         });
 
         // Calculate metrics for each user
@@ -233,18 +277,19 @@ class MessageFatigueCalculator {
             };
         });
 
-        // Calculate campaign metrics
-        const campaignAnalysis = Object.values(campaignData).map(campaign => ({
-            name: campaign.name,
-            messageCount: campaign.messageCount,
-            uniqueRecipients: campaign.uniqueRecipients.size,
-            avgFrequency: Math.round((campaign.messageCount / campaign.uniqueRecipients.size) * 100) / 100
+        // Calculate message metrics
+        const messageAnalysis = Object.values(messageData).map(message => ({
+            name: message.name,
+            type: message.type,
+            messageCount: message.messageCount,
+            uniqueRecipients: message.uniqueRecipients.size,
+            avgFrequency: Math.round((message.messageCount / message.uniqueRecipients.size) * 100) / 100
         }));
 
         // Store processed data
         this.processedData = {
             users: userAnalysis,
-            campaigns: campaignAnalysis,
+            messages: messageAnalysis,
             dateRange: { min: minDate, max: maxDate },
             summary: {
                 totalMessages: this.data.length,
@@ -274,7 +319,7 @@ class MessageFatigueCalculator {
 
         // Populate tables
         this.populateUserTable();
-        this.populateCampaignTable();
+        this.populateMessageTable();
 
         // Show results section
         document.getElementById('resultsSection').style.display = 'block';
@@ -427,22 +472,59 @@ class MessageFatigueCalculator {
         this.updatePaginationControls();
     }
 
-    populateCampaignTable() {
+    populateMessageTable() {
+        this.filteredMessages = [...this.processedData.messages];
+        this.messageCurrentPage = 1;
+        this.renderMessageTable();
+    }
+
+    renderMessageTable() {
         const tbody = document.getElementById('campaignTableBody');
         tbody.innerHTML = '';
 
-        this.processedData.campaigns
-            .sort((a, b) => b.messageCount - a.messageCount)
-            .forEach(campaign => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${campaign.name || 'Unknown Campaign'}</td>
-                    <td>${campaign.messageCount.toLocaleString()}</td>
-                    <td>${campaign.uniqueRecipients.toLocaleString()}</td>
-                    <td>${campaign.avgFrequency}</td>
-                `;
-                tbody.appendChild(row);
-            });
+        // Apply sorting
+        this.applyMessageSorting();
+
+        // Calculate pagination
+        const totalMessages = this.filteredMessages.length;
+        const startIndex = (this.messageCurrentPage - 1) * this.messagePageSize;
+        const endIndex = this.messagePageSize === 'all' ? totalMessages : Math.min(startIndex + parseInt(this.messagePageSize), totalMessages);
+        
+        // Get current page messages
+        const currentPageMessages = this.messagePageSize === 'all' ? 
+            this.filteredMessages : 
+            this.filteredMessages.slice(startIndex, endIndex);
+
+        // Render table rows
+        currentPageMessages.forEach(message => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${message.name || 'Unknown Message'}</td>
+                <td><span class="message-type-${message.type}">${this.formatMessageType(message.type)}</span></td>
+                <td>${message.messageCount.toLocaleString()}</td>
+                <td>${message.uniqueRecipients.toLocaleString()}</td>
+                <td>${message.avgFrequency}</td>
+            `;
+            tbody.appendChild(row);
+        });
+
+        // Update table info
+        document.getElementById('messageTableInfo').textContent = 
+            `Showing ${startIndex + 1}-${endIndex} of ${totalMessages} messages`;
+
+        // Update pagination controls
+        this.updateMessagePaginationControls();
+    }
+
+    formatMessageType(type) {
+        const typeMap = {
+            'campaign': 'Campaign',
+            'newsletter': 'Newsletter',
+            'transactional': 'Transactional',
+            'template': 'Template',
+            'unknown': 'Unknown'
+        };
+        return typeMap[type] || type;
     }
 
     filterUsers() {
@@ -607,6 +689,170 @@ class MessageFatigueCalculator {
             }
 
             if (this.sortDirection === 'asc') {
+                return valueA < valueB ? -1 : valueA > valueB ? 1 : 0;
+            } else {
+                return valueA > valueB ? -1 : valueA < valueB ? 1 : 0;
+            }
+        });
+    }
+
+    // Message filtering and pagination methods
+    filterMessages() {
+        const searchTerm = document.getElementById('messageSearch').value.toLowerCase();
+        const typeFilter = document.getElementById('messageType').value;
+
+        this.filteredMessages = this.processedData.messages.filter(message => {
+            const matchesSearch = message.name.toLowerCase().includes(searchTerm);
+            const matchesType = typeFilter === 'all' || message.type === typeFilter;
+            return matchesSearch && matchesType;
+        });
+
+        this.messageCurrentPage = 1; // Reset to first page when filtering
+        this.renderMessageTable();
+    }
+
+    handleMessagePageSizeChange() {
+        const newPageSize = document.getElementById('messagePageSize').value;
+        this.messagePageSize = newPageSize === 'all' ? 'all' : parseInt(newPageSize);
+        this.messageCurrentPage = 1;
+        this.renderMessageTable();
+    }
+
+    getMessageTotalPages() {
+        if (this.messagePageSize === 'all') return 1;
+        return Math.ceil(this.filteredMessages.length / this.messagePageSize);
+    }
+
+    goToMessagePage(page) {
+        const totalPages = this.getMessageTotalPages();
+        if (page >= 1 && page <= totalPages) {
+            this.messageCurrentPage = page;
+            this.renderMessageTable();
+        }
+    }
+
+    updateMessagePaginationControls() {
+        const totalPages = this.getMessageTotalPages();
+        const paginationControls = document.getElementById('messagePaginationControls');
+        
+        if (this.messagePageSize === 'all' || totalPages <= 1) {
+            paginationControls.style.display = 'none';
+            return;
+        }
+        
+        paginationControls.style.display = 'flex';
+
+        // Update pagination info
+        document.getElementById('messagePaginationInfo').textContent = 
+            `Page ${this.messageCurrentPage} of ${totalPages}`;
+
+        // Update button states
+        document.getElementById('messageFirstPage').disabled = this.messageCurrentPage === 1;
+        document.getElementById('messagePrevPage').disabled = this.messageCurrentPage === 1;
+        document.getElementById('messageNextPage').disabled = this.messageCurrentPage === totalPages;
+        document.getElementById('messageLastPage').disabled = this.messageCurrentPage === totalPages;
+
+        // Update page numbers
+        this.renderMessagePageNumbers();
+    }
+
+    renderMessagePageNumbers() {
+        const pageNumbers = document.getElementById('messagePageNumbers');
+        pageNumbers.innerHTML = '';
+        
+        const totalPages = this.getMessageTotalPages();
+        const current = this.messageCurrentPage;
+        
+        // Calculate which page numbers to show
+        let startPage = Math.max(1, current - 2);
+        let endPage = Math.min(totalPages, current + 2);
+        
+        // Adjust range if we're near the beginning or end
+        if (current <= 3) {
+            endPage = Math.min(5, totalPages);
+        } else if (current >= totalPages - 2) {
+            startPage = Math.max(totalPages - 4, 1);
+        }
+
+        // Add first page if not in range
+        if (startPage > 1) {
+            this.createMessagePageNumber(1);
+            if (startPage > 2) {
+                this.createMessagePageNumber('...', true);
+            }
+        }
+
+        // Add page range
+        for (let i = startPage; i <= endPage; i++) {
+            this.createMessagePageNumber(i);
+        }
+
+        // Add last page if not in range
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                this.createMessagePageNumber('...', true);
+            }
+            this.createMessagePageNumber(totalPages);
+        }
+    }
+
+    createMessagePageNumber(pageNum, isEllipsis = false) {
+        const pageNumbers = document.getElementById('messagePageNumbers');
+        const span = document.createElement('span');
+        span.className = `page-number ${isEllipsis ? 'ellipsis' : ''} ${pageNum === this.messageCurrentPage ? 'active' : ''}`;
+        span.textContent = pageNum;
+        
+        if (!isEllipsis) {
+            span.addEventListener('click', () => this.goToMessagePage(pageNum));
+        }
+        
+        pageNumbers.appendChild(span);
+    }
+
+    // Message sorting methods
+    handleMessageSort(column) {
+        if (this.messageSortColumn === column) {
+            this.messageSortDirection = this.messageSortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            this.messageSortColumn = column;
+            this.messageSortDirection = 'asc';
+        }
+        
+        this.updateMessageSortIndicators();
+        this.renderMessageTable();
+    }
+
+    updateMessageSortIndicators() {
+        // Clear all sort indicators in message table
+        document.querySelectorAll('#campaignTable .sortable').forEach(header => {
+            header.classList.remove('sort-asc', 'sort-desc');
+        });
+        
+        // Add indicator to current sort column
+        if (this.messageSortColumn) {
+            const header = document.querySelector(`#campaignTable [data-sort="${this.messageSortColumn}"]`);
+            if (header) {
+                header.classList.add(`sort-${this.messageSortDirection}`);
+            }
+        }
+    }
+
+    applyMessageSorting() {
+        if (!this.messageSortColumn) return;
+
+        this.filteredMessages.sort((a, b) => {
+            let valueA = a[this.messageSortColumn];
+            let valueB = b[this.messageSortColumn];
+
+            // Handle different data types
+            if (this.messageSortColumn === 'name' || this.messageSortColumn === 'type') {
+                valueA = valueA.toLowerCase();
+                valueB = valueB.toLowerCase();
+            } else if (typeof valueA === 'number') {
+                // Already numbers, no conversion needed
+            }
+
+            if (this.messageSortDirection === 'asc') {
                 return valueA < valueB ? -1 : valueA > valueB ? 1 : 0;
             } else {
                 return valueA > valueB ? -1 : valueA < valueB ? 1 : 0;
