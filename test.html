@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Message Fatigue Calculator - Tests</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-suite {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-case {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 4px solid #ddd;
+        }
+        .test-pass {
+            background: #d4edda;
+            border-left-color: #28a745;
+            color: #155724;
+        }
+        .test-fail {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+            color: #721c24;
+        }
+        .test-summary {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Message Fatigue Calculator - Test Suite</h1>
+    
+    <div class="test-summary" id="testSummary">
+        Running tests...
+    </div>
+
+    <div id="testResults"></div>
+
+    <script>
+        // Simple testing framework
+        class TestRunner {
+            constructor() {
+                this.tests = [];
+                this.results = [];
+            }
+
+            test(name, testFunction) {
+                this.tests.push({ name, testFunction });
+            }
+
+            async runAll() {
+                const resultsContainer = document.getElementById('testResults');
+                const summaryContainer = document.getElementById('testSummary');
+                
+                for (const test of this.tests) {
+                    try {
+                        await test.testFunction();
+                        this.results.push({ name: test.name, passed: true });
+                        this.renderTestResult(resultsContainer, test.name, true);
+                    } catch (error) {
+                        this.results.push({ name: test.name, passed: false, error: error.message });
+                        this.renderTestResult(resultsContainer, test.name, false, error.message);
+                    }
+                }
+
+                this.renderSummary(summaryContainer);
+            }
+
+            renderTestResult(container, name, passed, error = null) {
+                const testDiv = document.createElement('div');
+                testDiv.className = `test-case ${passed ? 'test-pass' : 'test-fail'}`;
+                testDiv.innerHTML = `
+                    <strong>${passed ? '✅' : '❌'} ${name}</strong>
+                    ${error ? `<br><small>Error: ${error}</small>` : ''}
+                `;
+                container.appendChild(testDiv);
+            }
+
+            renderSummary(container) {
+                const passed = this.results.filter(r => r.passed).length;
+                const total = this.results.length;
+                const percentage = Math.round((passed / total) * 100);
+                
+                container.innerHTML = `
+                    <h3>Test Results Summary</h3>
+                    <p>✅ ${passed} passed, ❌ ${total - passed} failed</p>
+                    <p>Success Rate: ${percentage}%</p>
+                `;
+            }
+
+            assert(condition, message) {
+                if (!condition) {
+                    throw new Error(message || 'Assertion failed');
+                }
+            }
+
+            assertEqual(actual, expected, message) {
+                if (actual !== expected) {
+                    throw new Error(message || `Expected ${expected}, got ${actual}`);
+                }
+            }
+
+            assertArrayEqual(actual, expected, message) {
+                if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+                    throw new Error(message || `Arrays not equal: ${JSON.stringify(actual)} !== ${JSON.stringify(expected)}`);
+                }
+            }
+        }
+
+        // Test data
+        const sampleCSVData = [
+            {
+                id: '1',
+                customer_id: '222',
+                email: 'test@example.com',
+                created_RFC3339: '2025-01-01T10:00:00Z',
+                campaign_name: 'Test Campaign'
+            },
+            {
+                id: '2',
+                customer_id: '222',
+                email: 'test@example.com',
+                created_RFC3339: '2025-01-02T10:00:00Z',
+                campaign_name: 'Test Campaign'
+            },
+            {
+                id: '3',
+                customer_id: '333',
+                email: 'user2@example.com',
+                created_RFC3339: '2025-01-01T10:00:00Z',
+                campaign_name: 'Test Campaign 2'
+            }
+        ];
+
+        // Mock MessageFatigueCalculator for testing
+        class MockMessageFatigueCalculator {
+            constructor() {
+                this.data = null;
+                this.processedData = null;
+            }
+
+            // Method to test file size formatting
+            formatFileSize(bytes) {
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                if (bytes === 0) return '0 Byte';
+                const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+                return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+            }
+
+            // Method to test fatigue calculation
+            calculateUserMetrics(userMessages, minDate, maxDate) {
+                const messages = userMessages;
+                const totalMessages = messages.length;
+                
+                const userMinDate = new Date(Math.min(...messages.map(m => m.date)));
+                const userMaxDate = new Date(Math.max(...messages.map(m => m.date)));
+                const daysDiff = Math.max(1, (userMaxDate - userMinDate) / (1000 * 60 * 60 * 24));
+                
+                const dailyAvg = totalMessages / daysDiff;
+                const weeklyAvg = dailyAvg * 7;
+                const monthlyAvg = dailyAvg * 30;
+                
+                let riskLevel = 'low';
+                if (dailyAvg > 3) riskLevel = 'high';
+                else if (dailyAvg > 1) riskLevel = 'medium';
+
+                return {
+                    totalMessages,
+                    dailyAvg: Math.round(dailyAvg * 100) / 100,
+                    weeklyAvg: Math.round(weeklyAvg * 100) / 100,
+                    monthlyAvg: Math.round(monthlyAvg * 100) / 100,
+                    riskLevel
+                };
+            }
+
+            // Method to validate CSV data
+            validateCSVData(data) {
+                const requiredColumns = ['customer_id', 'email', 'created_RFC3339'];
+                const columns = Object.keys(data[0] || {});
+                const missingColumns = requiredColumns.filter(col => !columns.includes(col));
+                return missingColumns.length === 0;
+            }
+        }
+
+        // Initialize test runner
+        const runner = new TestRunner();
+        const calculator = new MockMessageFatigueCalculator();
+
+        // File size formatting tests
+        runner.test('Format file size - bytes', () => {
+            const result = calculator.formatFileSize(512);
+            runner.assertEqual(result, '512 Bytes');
+        });
+
+        runner.test('Format file size - kilobytes', () => {
+            const result = calculator.formatFileSize(1536);
+            runner.assertEqual(result, '1.5 KB');
+        });
+
+        runner.test('Format file size - megabytes', () => {
+            const result = calculator.formatFileSize(5242880);
+            runner.assertEqual(result, '5 MB');
+        });
+
+        runner.test('Format file size - zero bytes', () => {
+            const result = calculator.formatFileSize(0);
+            runner.assertEqual(result, '0 Byte');
+        });
+
+        // CSV validation tests
+        runner.test('CSV validation - valid data', () => {
+            const isValid = calculator.validateCSVData(sampleCSVData);
+            runner.assert(isValid, 'Valid CSV data should pass validation');
+        });
+
+        runner.test('CSV validation - missing columns', () => {
+            const invalidData = [{ id: '1', name: 'test' }];
+            const isValid = calculator.validateCSVData(invalidData);
+            runner.assert(!isValid, 'Invalid CSV data should fail validation');
+        });
+
+        runner.test('CSV validation - empty data', () => {
+            const isEmpty = calculator.validateCSVData([]);
+            runner.assert(!isEmpty, 'Empty data should fail validation');
+        });
+
+        // Fatigue calculation tests
+        runner.test('User metrics calculation - single day', () => {
+            const messages = [
+                { date: new Date('2025-01-01T10:00:00Z') },
+                { date: new Date('2025-01-01T14:00:00Z') }
+            ];
+            const metrics = calculator.calculateUserMetrics(messages);
+            
+            runner.assertEqual(metrics.totalMessages, 2);
+            runner.assertEqual(metrics.dailyAvg, 2);
+            runner.assertEqual(metrics.riskLevel, 'high');
+        });
+
+        runner.test('User metrics calculation - multiple days', () => {
+            const messages = [
+                { date: new Date('2025-01-01T10:00:00Z') },
+                { date: new Date('2025-01-02T10:00:00Z') }
+            ];
+            const metrics = calculator.calculateUserMetrics(messages);
+            
+            runner.assertEqual(metrics.totalMessages, 2);
+            runner.assertEqual(metrics.dailyAvg, 2);
+            runner.assertEqual(metrics.weeklyAvg, 14);
+            runner.assertEqual(metrics.monthlyAvg, 60);
+        });
+
+        runner.test('Risk level calculation - low risk', () => {
+            const messages = [
+                { date: new Date('2025-01-01T10:00:00Z') }
+            ];
+            const metrics = calculator.calculateUserMetrics(messages);
+            runner.assertEqual(metrics.riskLevel, 'low');
+        });
+
+        runner.test('Risk level calculation - medium risk', () => {
+            const messages = [
+                { date: new Date('2025-01-01T10:00:00Z') },
+                { date: new Date('2025-01-02T10:00:00Z') }
+            ];
+            const metrics = calculator.calculateUserMetrics(messages);
+            runner.assertEqual(metrics.riskLevel, 'medium');
+        });
+
+        runner.test('Risk level calculation - high risk', () => {
+            const messages = [
+                { date: new Date('2025-01-01T10:00:00Z') },
+                { date: new Date('2025-01-01T14:00:00Z') },
+                { date: new Date('2025-01-01T18:00:00Z') },
+                { date: new Date('2025-01-01T22:00:00Z') }
+            ];
+            const metrics = calculator.calculateUserMetrics(messages);
+            runner.assertEqual(metrics.riskLevel, 'high');
+        });
+
+        // Date parsing tests
+        runner.test('Date parsing - RFC3339 format', () => {
+            const date = new Date('2025-01-01T10:00:00Z');
+            runner.assert(!isNaN(date.getTime()), 'Should parse RFC3339 date format');
+        });
+
+        runner.test('Date parsing - invalid format', () => {
+            const date = new Date('invalid-date');
+            runner.assert(isNaN(date.getTime()), 'Should detect invalid date format');
+        });
+
+        // Data processing tests
+        runner.test('Data grouping by user', () => {
+            const testData = [
+                { email: 'user1@test.com', created_RFC3339: '2025-01-01T10:00:00Z' },
+                { email: 'user1@test.com', created_RFC3339: '2025-01-01T14:00:00Z' },
+                { email: 'user2@test.com', created_RFC3339: '2025-01-01T10:00:00Z' }
+            ];
+            
+            const userGroups = {};
+            testData.forEach(row => {
+                const email = row.email;
+                if (!userGroups[email]) userGroups[email] = [];
+                userGroups[email].push(row);
+            });
+            
+            runner.assertEqual(Object.keys(userGroups).length, 2);
+            runner.assertEqual(userGroups['user1@test.com'].length, 2);
+            runner.assertEqual(userGroups['user2@test.com'].length, 1);
+        });
+
+        // Edge case tests
+        runner.test('Handle empty email field', () => {
+            const testData = [{ email: '', customer_id: '123', created_RFC3339: '2025-01-01T10:00:00Z' }];
+            const validRecords = testData.filter(row => row.email && row.email.trim() !== '');
+            runner.assertEqual(validRecords.length, 0);
+        });
+
+        runner.test('Handle invalid date field', () => {
+            const testData = [{ email: 'test@test.com', created_RFC3339: 'invalid-date' }];
+            const validRecords = testData.filter(row => {
+                const date = new Date(row.created_RFC3339);
+                return !isNaN(date.getTime());
+            });
+            runner.assertEqual(validRecords.length, 0);
+        });
+
+        // Run all tests
+        runner.runAll();
+    </script>
+</body>
+</html>

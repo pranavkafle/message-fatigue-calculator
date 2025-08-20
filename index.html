@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Message Fatigue Calculator</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>📊 Message Fatigue Calculator</h1>
+            <p class="subtitle">Analyze message frequency patterns while keeping your data completely private</p>
+            <div class="privacy-badge">
+                <span class="shield">🔒</span>
+                <span>100% Local Processing - No Data Uploaded</span>
+            </div>
+        </header>
+
+        <!-- File Upload Section -->
+        <section class="upload-section" id="uploadSection">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-content">
+                    <div class="upload-icon">📁</div>
+                    <h3>Drop your CSV file here</h3>
+                    <p>or <button class="browse-btn" id="browseBtn">browse files</button></p>
+                    <input type="file" id="fileInput" accept=".csv" hidden>
+                    <div class="file-requirements">
+                        <p><strong>Required columns:</strong> customer_id, email, created_RFC3339</p>
+                        <p><strong>Max file size:</strong> 10MB</p>
+                    </div>
+                </div>
+            </div>
+            <div class="upload-status" id="uploadStatus" style="display: none;"></div>
+        </section>
+
+        <!-- File Info Section -->
+        <section class="file-info" id="fileInfo" style="display: none;">
+            <h3>📋 File Information</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="label">File Name:</span>
+                    <span id="fileName"></span>
+                </div>
+                <div class="info-item">
+                    <span class="label">File Size:</span>
+                    <span id="fileSize"></span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Total Records:</span>
+                    <span id="totalRecords"></span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Date Range:</span>
+                    <span id="dateRange"></span>
+                </div>
+            </div>
+            <div class="validation-results" id="validationResults"></div>
+        </section>
+
+        <!-- Results Section -->
+        <section class="results-section" id="resultsSection" style="display: none;">
+            <!-- Summary Cards -->
+            <div class="summary-cards">
+                <div class="card">
+                    <h4>📈 Total Messages</h4>
+                    <div class="metric" id="totalMessages">-</div>
+                </div>
+                <div class="card">
+                    <h4>👥 Unique Users</h4>
+                    <div class="metric" id="uniqueUsers">-</div>
+                </div>
+                <div class="card">
+                    <h4>📊 Avg Messages/User/Day</h4>
+                    <div class="metric" id="avgPerDay">-</div>
+                </div>
+                <div class="card warning">
+                    <h4>⚠️ High-Frequency Users</h4>
+                    <div class="metric" id="highFreqUsers">-</div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="charts-container">
+                <div class="chart-card">
+                    <h3>📊 Messages Over Time</h3>
+                    <canvas id="timeChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>👤 User Distribution by Frequency</h3>
+                    <canvas id="distributionChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Detailed Tables -->
+            <div class="tables-container">
+                <div class="table-card">
+                    <h3>📋 User Frequency Analysis</h3>
+                    <div class="table-controls">
+                        <input type="text" id="userSearch" placeholder="Search users..." class="search-input">
+                        <select id="riskFilter" class="filter-select">
+                            <option value="all">All Risk Levels</option>
+                            <option value="high">High Risk</option>
+                            <option value="medium">Medium Risk</option>
+                            <option value="low">Low Risk</option>
+                        </select>
+                    </div>
+                    <div class="table-wrapper">
+                        <table id="userTable">
+                            <thead>
+                                <tr>
+                                    <th>Email</th>
+                                    <th>Total Messages</th>
+                                    <th>Daily Avg</th>
+                                    <th>Weekly Avg</th>
+                                    <th>Monthly Avg</th>
+                                    <th>Risk Level</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <h3>📈 Campaign Analysis</h3>
+                    <div class="table-wrapper">
+                        <table id="campaignTable">
+                            <thead>
+                                <tr>
+                                    <th>Campaign</th>
+                                    <th>Messages Sent</th>
+                                    <th>Unique Recipients</th>
+                                    <th>Avg Frequency</th>
+                                </tr>
+                            </thead>
+                            <tbody id="campaignTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Export Section -->
+            <div class="export-section">
+                <h3>📥 Export Results</h3>
+                <div class="export-buttons">
+                    <button class="export-btn" id="exportCsv">💾 Export CSV</button>
+                    <button class="export-btn" id="exportPdf">📄 Export PDF Report</button>
+                    <button class="export-btn" id="exportCharts">📊 Export Charts</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>🔒 Your data never leaves your browser. All processing happens locally for maximum privacy.</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
