@@ -66,6 +66,21 @@
         <section class="results-section" id="resultsSection" style="display: none;">
             <!-- Summary Cards -->
             <div class="summary-cards">
+                <div class="card primary">
+                    <div class="card-header">
+                        <h4 id="avgMetricTitle">📊 Avg Messages/User/Day</h4>
+                        <div class="time-toggle">
+                            <button class="toggle-btn active" data-period="daily">D</button>
+                            <button class="toggle-btn" data-period="weekly">W</button>
+                            <button class="toggle-btn" data-period="monthly">M</button>
+                        </div>
+                    </div>
+                    <div class="metric" id="avgMetric">-</div>
+                </div>
+                <div class="card warning">
+                    <h4>⚠️ High-Frequency Users</h4>
+                    <div class="metric" id="highFreqUsers">-</div>
+                </div>
                 <div class="card">
                     <h4>📈 Total Messages</h4>
                     <div class="metric" id="totalMessages">-</div>
@@ -73,14 +88,6 @@
                 <div class="card">
                     <h4>👥 Unique Users</h4>
                     <div class="metric" id="uniqueUsers">-</div>
-                </div>
-                <div class="card">
-                    <h4>📊 Avg Messages/User/Day</h4>
-                    <div class="metric" id="avgPerDay">-</div>
-                </div>
-                <div class="card warning">
-                    <h4>⚠️ High-Frequency Users</h4>
-                    <div class="metric" id="highFreqUsers">-</div>
                 </div>
             </div>
 

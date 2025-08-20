@@ -224,8 +224,52 @@ body {
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
+.card.primary {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border: 2px solid #fff;
+    box-shadow: 0 6px 12px rgba(102, 126, 234, 0.3);
+    transform: scale(1.02);
+}
+
 .card.warning {
     background: linear-gradient(135deg, #ff7675, #fd79a8);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.time-toggle {
+    display: flex;
+    gap: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 4px;
+}
+
+.toggle-btn {
+    background: transparent;
+    border: none;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    min-width: 32px;
+}
+
+.toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.toggle-btn.active {
+    background: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .card h4 {
@@ -614,6 +658,16 @@ tr:hover {
     
     .summary-cards {
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+    
+    .card-header {
+        flex-direction: column;
+        gap: 10px;
+        align-items: center;
+    }
+    
+    .time-toggle {
+        margin-top: 5px;
     }
     
     .export-buttons {

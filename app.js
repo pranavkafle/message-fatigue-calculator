@@ -17,6 +17,9 @@ class MessageFatigueCalculator {
         this.messageSortColumn = null;
         this.messageSortDirection = 'asc';
         
+        // Time period for metrics display
+        this.currentTimePeriod = 'daily';
+        
         this.initializeEventListeners();
     }
 
@@ -68,6 +71,11 @@ class MessageFatigueCalculator {
         // Sorting events - Message table
         document.querySelectorAll('#campaignTable .sortable').forEach(header => {
             header.addEventListener('click', () => this.handleMessageSort(header.dataset.sort));
+        });
+
+        // Time period toggle events
+        document.querySelectorAll('.toggle-btn').forEach(btn => {
+            btn.addEventListener('click', () => this.handleTimePeriodChange(btn.dataset.period));
         });
 
         // Export events
@@ -311,8 +319,10 @@ class MessageFatigueCalculator {
         // Update summary cards
         document.getElementById('totalMessages').textContent = this.processedData.summary.totalMessages.toLocaleString();
         document.getElementById('uniqueUsers').textContent = this.processedData.summary.uniqueUsers.toLocaleString();
-        document.getElementById('avgPerDay').textContent = this.processedData.summary.avgPerDay;
         document.getElementById('highFreqUsers').textContent = this.processedData.summary.highFreqUsers.toLocaleString();
+        
+        // Update average metric based on current time period
+        this.updateAverageMetric();
 
         // Create charts
         this.createCharts();
@@ -694,6 +704,48 @@ class MessageFatigueCalculator {
                 return valueA > valueB ? -1 : valueA < valueB ? 1 : 0;
             }
         });
+    }
+
+    // Time period toggle methods
+    handleTimePeriodChange(period) {
+        this.currentTimePeriod = period;
+        
+        // Update active button
+        document.querySelectorAll('.toggle-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.querySelector(`[data-period="${period}"]`).classList.add('active');
+        
+        // Update metric display
+        this.updateAverageMetric();
+    }
+
+    updateAverageMetric() {
+        const titleElement = document.getElementById('avgMetricTitle');
+        const metricElement = document.getElementById('avgMetric');
+        
+        let value, title, emoji;
+        
+        switch(this.currentTimePeriod) {
+            case 'daily':
+                value = this.processedData.summary.avgPerDay;
+                title = 'Avg Messages/User/Day';
+                emoji = '📊';
+                break;
+            case 'weekly':
+                value = Math.round((this.processedData.summary.avgPerDay * 7) * 100) / 100;
+                title = 'Avg Messages/User/Week';
+                emoji = '📈';
+                break;
+            case 'monthly':
+                value = Math.round((this.processedData.summary.avgPerDay * 30) * 100) / 100;
+                title = 'Avg Messages/User/Month';
+                emoji = '📅';
+                break;
+        }
+        
+        titleElement.textContent = `${emoji} ${title}`;
+        metricElement.textContent = value;
     }
 
     // Message filtering and pagination methods
