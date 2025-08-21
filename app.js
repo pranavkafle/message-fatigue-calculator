@@ -1,22 +1,31 @@
-// Message Fatigue Calculator - Industry Standard Metrics
+// Message Fatigue Calculator - Main Application
 class MessageFatigueCalculator {
     constructor() {
         this.data = null;
         this.processedData = null;
-        this.fatigueMetrics = null;
         this.charts = {};
         this.filteredUsers = [];
         this.currentPage = 1;
-        this.pageSize = 20;
+        this.pageSize = 10; // Reduced for virtual pagination
         this.sortColumn = null;
         this.sortDirection = 'asc';
         
         // Message analysis pagination
         this.filteredMessages = [];
         this.messageCurrentPage = 1;
-        this.messagePageSize = 20;
+        this.messagePageSize = 10; // Reduced for virtual pagination
         this.messageSortColumn = null;
         this.messageSortDirection = 'asc';
+        
+        // Time period for metrics display
+        this.currentTimePeriod = 'daily';
+        
+        // Risk level for display
+        this.currentRiskLevel = 'high';
+        
+        // Progressive processor
+        this.progressiveProcessor = null;
+        this.isLargeDataset = false;
         
         this.initializeEventListeners();
     }
@@ -76,8 +85,10 @@ class MessageFatigueCalculator {
             btn.addEventListener('click', () => this.handleTimePeriodChange(btn.dataset.period));
         });
 
-        // Advanced metrics toggle
-        document.getElementById('toggleAdvanced').addEventListener('click', this.toggleAdvancedMetrics.bind(this));
+        // Risk level toggle events
+        document.querySelectorAll('.risk-btn').forEach(btn => {
+            btn.addEventListener('click', () => this.handleRiskLevelChange(btn.dataset.risk));
+        });
 
         // Export events
         document.getElementById('exportCsv').addEventListener('click', this.exportCSV.bind(this));
@@ -113,22 +124,80 @@ class MessageFatigueCalculator {
         }
     }
 
-    processFile(file) {
+    async processFile(file) {
         // Validate file
         if (!file.name.toLowerCase().endsWith('.csv')) {
             this.showStatus('error', 'Please select a CSV file.');
             return;
         }
 
-        if (file.size > 10 * 1024 * 1024) { // 10MB limit
-            this.showStatus('error', 'File size must be less than 10MB.');
-            return;
-        }
-
-        this.showStatus('processing', 'Processing file...');
         this.showFileInfo(file);
+        
+        // Determine if this is a large dataset
+        const estimatedRows = Math.ceil(file.size / 100); // Rough estimate: 100 bytes per row
+        this.isLargeDataset = estimatedRows > 50000 || file.size > 50 * 1024 * 1024; // 50MB or 50K rows
 
-        // Parse CSV
+        if (this.isLargeDataset) {
+            this.showLargeDatasetWarning(file.size, estimatedRows);
+            await this.processLargeFile(file);
+        } else {
+            this.processSmallFile(file);
+        }
+    }
+
+    showLargeDatasetWarning(fileSize, estimatedRows) {
+        const warningHtml = `
+            <div class="large-dataset-warning">
+                <h4>⚡ Large Dataset Detected</h4>
+                <p>File size: ${this.formatFileSize(fileSize)} (~${estimatedRows.toLocaleString()} rows)</p>
+                <p>Using progressive processing for optimal performance. This may take several minutes.</p>
+            </div>
+        `;
+        
+        const uploadSection = document.getElementById('uploadSection');
+        const existingWarning = uploadSection.querySelector('.large-dataset-warning');
+        if (existingWarning) existingWarning.remove();
+        
+        uploadSection.insertAdjacentHTML('beforeend', warningHtml);
+    }
+
+    async processLargeFile(file) {
+        try {
+            // Initialize progressive processor
+            if (!this.progressiveProcessor) {
+                this.progressiveProcessor = new ProgressiveProcessor();
+            }
+
+            this.showStatus('processing', 'Starting progressive processing...');
+
+            // Process file progressively
+            const results = await this.progressiveProcessor.processFile(file);
+            
+            // Store results
+            this.processedData = {
+                users: results.users,
+                messages: results.messages,
+                summary: results.summary,
+                dateRange: this.calculateDateRange(results.users),
+                processingStats: {
+                    totalRows: results.totalRows,
+                    processingTime: results.processingTime,
+                    rowsPerSecond: Math.round(results.totalRows / (results.processingTime / 1000))
+                }
+            };
+
+            this.showPerformanceStats();
+            this.displayResults();
+            
+        } catch (error) {
+            this.showStatus('error', `Error processing large file: ${error.message}`);
+        }
+    }
+
+    processSmallFile(file) {
+        this.showStatus('processing', 'Processing file...');
+
+        // Use traditional Papa Parse for smaller files
         Papa.parse(file, {
             header: true,
             complete: this.handleCSVParsed.bind(this),
@@ -186,256 +255,18 @@ class MessageFatigueCalculator {
     calculateFatigueMetrics() {
         if (!this.data || this.data.length === 0) return;
 
-        this.showStatus('processing', 'Calculating comprehensive fatigue metrics...');
+        this.showStatus('processing', 'Calculating fatigue metrics...');
 
-        // Parse and validate data
-        const validData = this.data.filter(row => {
-            const email = row.email || row.recipient;
-            const deliveredDate = row.delivered_RFC3339 ? new Date(row.delivered_RFC3339) : null;
-            return email && deliveredDate && !isNaN(deliveredDate.getTime());
-        });
-
-        if (validData.length === 0) {
-            this.showStatus('error', 'No valid data found for analysis');
-            return;
-        }
-
-        // Calculate all industry-standard fatigue metrics
-        this.fatigueMetrics = this.calculateComprehensiveMetrics(validData);
-        this.processedData = this.processDataForTables(validData);
-        
-        this.displayFatigueResults();
-    }
-
-    calculateComprehensiveMetrics(data) {
-        const metrics = {};
-        
-        // Basic counts
-        const totalDelivered = data.length;
-        const totalOpened = data.filter(row => row.opened_RFC3339).length;
-        const totalClicked = data.filter(row => row.clicked_RFC3339).length;
-        const totalConverted = data.filter(row => row.converted_RFC3339).length;
-        const totalUnsubscribed = data.filter(row => row.unsubscribed_RFC3339).length;
-        const totalSpammed = data.filter(row => row.spammed_RFC3339).length;
-        const totalBounced = data.filter(row => row.bounced_RFC3339).length;
-        const totalTopicUnsub = data.filter(row => row.topic_unsubscribed_RFC3339).length;
-        
-        // Date range analysis
-        const dates = data.map(row => new Date(row.delivered_RFC3339)).sort((a, b) => a - b);
-        const minDate = dates[0];
-        const maxDate = dates[dates.length - 1];
-        const daysDiff = Math.max(1, (maxDate - minDate) / (1000 * 60 * 60 * 24));
-        
-        // Unique recipients
-        const uniqueRecipients = new Set(data.map(row => row.email || row.recipient)).size;
-        
-        // 1. Message Frequency (14-day rolling average)
-        metrics.messageFrequency = this.calculate14DayFrequency(data);
-        
-        // 2. Open Rate
-        metrics.openRate = totalDelivered > 0 ? (totalOpened / totalDelivered * 100) : 0;
-        
-        // 3. Click-Through Rate
-        metrics.clickRate = totalDelivered > 0 ? (totalClicked / totalDelivered * 100) : 0;
-        
-        // 4. Conversion Rate
-        metrics.conversionRate = totalDelivered > 0 ? (totalConverted / totalDelivered * 100) : 0;
-        
-        // 5. Unsubscribe + Spam Rate (Critical fatigue indicator)
-        metrics.churnRate = totalDelivered > 0 ? ((totalUnsubscribed + totalSpammed) / totalDelivered * 100) : 0;
-        
-        // 6. Churn-to-Open Ratio
-        metrics.churnToOpen = totalOpened > 0 ? ((totalUnsubscribed + totalSpammed) / totalOpened * 100) : 0;
-        
-        // 7. Bounce Rate
-        metrics.bounceRate = totalDelivered > 0 ? (totalBounced / totalDelivered * 100) : 0;
-        
-        // 8. Topic Unsubscribe Rate
-        metrics.topicUnsubRate = totalDelivered > 0 ? (totalTopicUnsub / totalDelivered * 100) : 0;
-        
-        // 9. Time-to-Open Analysis
-        metrics.timeToOpen = this.calculateTimeToOpen(data);
-        
-        // 10. Net Engagement Score
-        metrics.netEngagement = this.calculateNetEngagementScore(totalOpened, totalClicked, totalConverted, totalUnsubscribed, totalSpammed);
-        
-        // 11. Engagement Decline Rate
-        metrics.engagementDecline = this.calculateEngagementDecline(data);
-        
-        // 12. Message Clustering Risk
-        metrics.clusteringRisk = this.calculateClusteringRisk(data);
-        
-        // 13. Engagement Momentum
-        metrics.engagementMomentum = this.calculateEngagementMomentum(data);
-        
-        // 14. Inter-Message Gap
-        metrics.interMessageGap = this.calculateInterMessageGap(data);
-        
-        // Analysis period and summary
-        metrics.analysisPeriod = `${minDate.toLocaleDateString()} - ${maxDate.toLocaleDateString()}`;
-        metrics.totalAnalyzed = totalDelivered;
-        metrics.uniqueRecipients = uniqueRecipients;
-        metrics.daysDiff = daysDiff;
-        
-        return metrics;
-    }
-
-    calculate14DayFrequency(data) {
-        // Group messages by 14-day windows
-        const sortedData = data.sort((a, b) => new Date(a.delivered_RFC3339) - new Date(b.delivered_RFC3339));
-        const windowSize = 14 * 24 * 60 * 60 * 1000; // 14 days in milliseconds
-        
-        if (sortedData.length === 0) return 0;
-        
-        const startDate = new Date(sortedData[0].delivered_RFC3339);
-        const endDate = new Date(sortedData[sortedData.length - 1].delivered_RFC3339);
-        
-        let totalFrequency = 0;
-        let windowCount = 0;
-        
-        for (let windowStart = startDate.getTime(); windowStart <= endDate.getTime(); windowStart += windowSize) {
-            const windowEnd = windowStart + windowSize;
-            const messagesInWindow = sortedData.filter(row => {
-                const msgTime = new Date(row.delivered_RFC3339).getTime();
-                return msgTime >= windowStart && msgTime < windowEnd;
-            }).length;
-            
-            if (messagesInWindow > 0) {
-                totalFrequency += messagesInWindow / 14; // messages per day in this window
-                windowCount++;
-            }
-        }
-        
-        return windowCount > 0 ? Math.round((totalFrequency / windowCount) * 100) / 100 : 0;
-    }
-
-    calculateTimeToOpen(data) {
-        const openTimes = data
-            .filter(row => row.delivered_RFC3339 && row.opened_RFC3339)
-            .map(row => {
-                const delivered = new Date(row.delivered_RFC3339);
-                const opened = new Date(row.opened_RFC3339);
-                return (opened - delivered) / (1000 * 60 * 60); // hours
-            })
-            .filter(time => time >= 0 && time <= 168); // Filter realistic times (0-168 hours)
-        
-        if (openTimes.length === 0) return 0;
-        
-        const avgTime = openTimes.reduce((sum, time) => sum + time, 0) / openTimes.length;
-        return Math.round(avgTime * 100) / 100;
-    }
-
-    calculateNetEngagementScore(opens, clicks, conversions, unsubscribes, spam) {
-        // Weighted formula: positive actions vs negative actions
-        const positiveScore = opens + (2 * clicks) + (3 * conversions);
-        const negativeScore = (5 * unsubscribes) + (10 * spam);
-        return Math.round((positiveScore - negativeScore) * 100) / 100;
-    }
-
-    calculateEngagementDecline(data) {
-        // Compare first half vs second half engagement rates
-        const sortedData = data.sort((a, b) => new Date(a.delivered_RFC3339) - new Date(b.delivered_RFC3339));
-        const midPoint = Math.floor(sortedData.length / 2);
-        
-        const firstHalf = sortedData.slice(0, midPoint);
-        const secondHalf = sortedData.slice(midPoint);
-        
-        const firstHalfEngagement = this.calculateEngagementRate(firstHalf);
-        const secondHalfEngagement = this.calculateEngagementRate(secondHalf);
-        
-        if (firstHalfEngagement === 0) return 0;
-        
-        const decline = ((firstHalfEngagement - secondHalfEngagement) / firstHalfEngagement) * 100;
-        return Math.round(decline * 100) / 100;
-    }
-
-    calculateEngagementRate(data) {
-        const delivered = data.length;
-        const engaged = data.filter(row => row.opened_RFC3339 || row.clicked_RFC3339).length;
-        return delivered > 0 ? (engaged / delivered) : 0;
-    }
-
-    calculateClusteringRisk(data) {
-        // Analyze daily message density
-        const dailyCounts = {};
-        
-        data.forEach(row => {
-            const date = new Date(row.delivered_RFC3339).toDateString();
-            dailyCounts[date] = (dailyCounts[date] || 0) + 1;
-        });
-        
-        const counts = Object.values(dailyCounts);
-        if (counts.length === 0) return 0;
-        
-        const maxDensity = Math.max(...counts);
-        const avgDensity = counts.reduce((sum, count) => sum + count, 0) / counts.length;
-        const stdDev = Math.sqrt(counts.reduce((sum, count) => sum + Math.pow(count - avgDensity, 2), 0) / counts.length);
-        
-        return Math.round((maxDensity + stdDev) * 100) / 100;
-    }
-
-    calculateEngagementMomentum(data) {
-        // Compare last week vs previous week
-        const sortedData = data.sort((a, b) => new Date(b.delivered_RFC3339) - new Date(a.delivered_RFC3339));
-        const weekInMs = 7 * 24 * 60 * 60 * 1000;
-        const now = new Date(sortedData[0].delivered_RFC3339);
-        
-        const lastWeek = sortedData.filter(row => {
-            const msgTime = new Date(row.delivered_RFC3339);
-            return (now - msgTime) <= weekInMs;
-        });
-        
-        const previousWeek = sortedData.filter(row => {
-            const msgTime = new Date(row.delivered_RFC3339);
-            const timeDiff = now - msgTime;
-            return timeDiff > weekInMs && timeDiff <= (2 * weekInMs);
-        });
-        
-        const lastWeekEngagement = this.calculateEngagementRate(lastWeek);
-        const previousWeekEngagement = this.calculateEngagementRate(previousWeek);
-        
-        if (previousWeekEngagement === 0) return 0;
-        
-        const momentum = ((lastWeekEngagement - previousWeekEngagement) / previousWeekEngagement) * 100;
-        return Math.round(momentum * 100) / 100;
-    }
-
-    calculateInterMessageGap(data) {
-        // Calculate average time between messages per user
-        const userMessages = {};
-        
-        data.forEach(row => {
-            const email = row.email || row.recipient;
-            if (!userMessages[email]) userMessages[email] = [];
-            userMessages[email].push(new Date(row.delivered_RFC3339));
-        });
-        
-        let totalGaps = [];
-        
-        Object.values(userMessages).forEach(messages => {
-            if (messages.length > 1) {
-                messages.sort((a, b) => a - b);
-                for (let i = 1; i < messages.length; i++) {
-                    const gap = (messages[i] - messages[i-1]) / (1000 * 60 * 60 * 24); // days
-                    totalGaps.push(gap);
-                }
-            }
-        });
-        
-        if (totalGaps.length === 0) return 0;
-        
-        const avgGap = totalGaps.reduce((sum, gap) => sum + gap, 0) / totalGaps.length;
-        return Math.round(avgGap * 100) / 100;
-    }
-
-    processDataForTables(data) {
-        // Keep existing table processing for compatibility
+        // Parse dates and group by user
         const userMessages = {};
         const messageData = {};
-        
-        data.forEach(row => {
+        let minDate = new Date();
+        let maxDate = new Date(0);
+
+        this.data.forEach(row => {
             const email = row.email || row.recipient;
-            const deliveredDate = new Date(row.delivered_RFC3339);
+            const customerId = row.customer_id;
+            const createdDate = new Date(row.created_RFC3339);
             
             // Determine message type and name
             let messageName = '';
@@ -458,16 +289,23 @@ class MessageFatigueCalculator {
                 messageType = 'unknown';
             }
 
+            if (!email || !customerId || isNaN(createdDate.getTime())) return;
+
+            // Track date range
+            if (createdDate < minDate) minDate = createdDate;
+            if (createdDate > maxDate) maxDate = createdDate;
+
             // Group by user
             const userKey = email;
             if (!userMessages[userKey]) {
                 userMessages[userKey] = {
                     email: email,
+                    customerId: customerId,
                     messages: []
                 };
             }
             userMessages[userKey].messages.push({
-                date: deliveredDate,
+                date: createdDate,
                 message: messageName,
                 type: messageType
             });
@@ -486,32 +324,38 @@ class MessageFatigueCalculator {
             messageData[messageKey].uniqueRecipients.add(email);
         });
 
-        // Calculate user metrics
+        // Calculate metrics for each user
         const userAnalysis = Object.values(userMessages).map(user => {
             const messages = user.messages;
             const totalMessages = messages.length;
             
+            // Calculate date range for this user
             const userMinDate = new Date(Math.min(...messages.map(m => m.date)));
             const userMaxDate = new Date(Math.max(...messages.map(m => m.date)));
             const daysDiff = Math.max(1, (userMaxDate - userMinDate) / (1000 * 60 * 60 * 24));
             
             const dailyAvg = totalMessages / daysDiff;
+            const weeklyAvg = dailyAvg * 7;
+            const monthlyAvg = dailyAvg * 30;
             
+            // Risk scoring
             let riskLevel = 'low';
             if (dailyAvg > 3) riskLevel = 'high';
             else if (dailyAvg > 1) riskLevel = 'medium';
 
             return {
                 email: user.email,
+                customerId: user.customerId,
                 totalMessages,
                 dailyAvg: Math.round(dailyAvg * 100) / 100,
-                weeklyAvg: Math.round(dailyAvg * 7 * 100) / 100,
-                monthlyAvg: Math.round(dailyAvg * 30 * 100) / 100,
+                weeklyAvg: Math.round(weeklyAvg * 100) / 100,
+                monthlyAvg: Math.round(monthlyAvg * 100) / 100,
                 riskLevel,
                 messages: user.messages
             };
         });
 
+        // Calculate message metrics
         const messageAnalysis = Object.values(messageData).map(message => ({
             name: message.name,
             type: message.type,
@@ -520,96 +364,20 @@ class MessageFatigueCalculator {
             avgFrequency: Math.round((message.messageCount / message.uniqueRecipients.size) * 100) / 100
         }));
 
-        return {
+        // Store processed data
+        this.processedData = {
             users: userAnalysis,
-            messages: messageAnalysis
+            messages: messageAnalysis,
+            dateRange: { min: minDate, max: maxDate },
+            summary: {
+                totalMessages: this.data.length,
+                uniqueUsers: userAnalysis.length,
+                avgPerDay: Math.round((userAnalysis.reduce((sum, user) => sum + user.dailyAvg, 0) / userAnalysis.length) * 100) / 100,
+                highFreqUsers: userAnalysis.filter(user => user.riskLevel === 'high').length
+            }
         };
-    }
 
-    displayFatigueResults() {
-        // Update overview
-        document.getElementById('analysisPeriod').textContent = this.fatigueMetrics.analysisPeriod;
-        document.getElementById('totalAnalyzed').textContent = this.fatigueMetrics.totalAnalyzed.toLocaleString();
-        document.getElementById('uniqueRecipients').textContent = this.fatigueMetrics.uniqueRecipients.toLocaleString();
-
-        // Update primary metrics
-        this.updateMetricCard('messageFrequency', this.fatigueMetrics.messageFrequency, this.getFrequencyStatus(this.fatigueMetrics.messageFrequency));
-        this.updateMetricCard('engagementDecline', Math.abs(this.fatigueMetrics.engagementDecline), this.getDeclineStatus(this.fatigueMetrics.engagementDecline));
-        this.updateMetricCard('churnRate', this.fatigueMetrics.churnRate, this.getChurnStatus(this.fatigueMetrics.churnRate));
-        this.updateMetricCard('churnToOpen', this.fatigueMetrics.churnToOpen, this.getChurnOpenStatus(this.fatigueMetrics.churnToOpen));
-
-        // Update secondary metrics
-        document.getElementById('openRate').textContent = this.fatigueMetrics.openRate.toFixed(1);
-        document.getElementById('clickRate').textContent = this.fatigueMetrics.clickRate.toFixed(1);
-        document.getElementById('conversionRate').textContent = this.fatigueMetrics.conversionRate.toFixed(1);
-        document.getElementById('timeToOpen').textContent = this.fatigueMetrics.timeToOpen.toFixed(1);
-        document.getElementById('netEngagement').textContent = this.fatigueMetrics.netEngagement.toLocaleString();
-        document.getElementById('topicUnsubRate').textContent = this.fatigueMetrics.topicUnsubRate.toFixed(2);
-
-        // Update advanced metrics
-        document.getElementById('clusteringRisk').textContent = this.fatigueMetrics.clusteringRisk.toFixed(1);
-        document.getElementById('engagementMomentum').textContent = this.fatigueMetrics.engagementMomentum.toFixed(1);
-        document.getElementById('bounceRate').textContent = this.fatigueMetrics.bounceRate.toFixed(1);
-        document.getElementById('interMessageGap').textContent = this.fatigueMetrics.interMessageGap.toFixed(1);
-
-        // Update file info
-        document.getElementById('totalRecords').textContent = this.data.length.toLocaleString();
-        document.getElementById('dateRange').textContent = this.fatigueMetrics.analysisPeriod;
-
-        // Create charts and tables
-        this.createCharts();
-        this.populateUserTable();
-        this.populateMessageTable();
-
-        // Show results
-        document.getElementById('resultsSection').style.display = 'block';
-        this.showStatus('success', 'Comprehensive fatigue analysis complete!');
-    }
-
-    updateMetricCard(metricId, value, status) {
-        document.getElementById(metricId).textContent = value.toFixed(2);
-        const statusElement = document.getElementById(metricId.replace(/([A-Z])/g, (match, p1) => p1.toLowerCase()) + 'Status');
-        if (statusElement) {
-            statusElement.textContent = status.text;
-            statusElement.className = `metric-status ${status.class}`;
-        }
-    }
-
-    getFrequencyStatus(frequency) {
-        if (frequency > 1) return { text: 'High Risk', class: 'critical' };
-        if (frequency > 0.5) return { text: 'Moderate', class: 'warning' };
-        return { text: 'Good', class: 'good' };
-    }
-
-    getDeclineStatus(decline) {
-        if (decline > 20) return { text: 'Critical', class: 'critical' };
-        if (decline > 10) return { text: 'Warning', class: 'warning' };
-        return { text: 'Stable', class: 'good' };
-    }
-
-    getChurnStatus(churnRate) {
-        if (churnRate > 0.5) return { text: 'Critical', class: 'critical' };
-        if (churnRate > 0.2) return { text: 'Warning', class: 'warning' };
-        return { text: 'Good', class: 'good' };
-    }
-
-    getChurnOpenStatus(churnToOpen) {
-        if (churnToOpen > 2) return { text: 'High Fatigue', class: 'critical' };
-        if (churnToOpen > 1) return { text: 'Moderate', class: 'warning' };
-        return { text: 'Healthy', class: 'good' };
-    }
-
-    toggleAdvancedMetrics() {
-        const advancedSection = document.getElementById('advancedMetrics');
-        const toggleBtn = document.getElementById('toggleAdvanced');
-        
-        if (advancedSection.style.display === 'none') {
-            advancedSection.style.display = 'grid';
-            toggleBtn.textContent = 'Hide';
-        } else {
-            advancedSection.style.display = 'none';
-            toggleBtn.textContent = 'Show';
-        }
+        this.displayResults();
     }
 
     displayResults() {
@@ -636,6 +404,69 @@ class MessageFatigueCalculator {
         // Show results section
         document.getElementById('resultsSection').style.display = 'block';
         this.showStatus('success', 'Analysis complete! Results displayed below.');
+    }
+
+    calculateDateRange(users) {
+        let minDate = new Date();
+        let maxDate = new Date(0);
+        
+        users.forEach(user => {
+            if (user.messages && user.messages.length > 0) {
+                user.messages.forEach(msg => {
+                    const date = new Date(msg.date);
+                    if (date < minDate) minDate = date;
+                    if (date > maxDate) maxDate = date;
+                });
+            }
+        });
+        
+        return { min: minDate, max: maxDate };
+    }
+
+    showPerformanceStats() {
+        if (!this.processedData.processingStats) return;
+        
+        const stats = this.processedData.processingStats;
+        const statsHtml = `
+            <div class="performance-stats">
+                <h4>📊 Processing Performance</h4>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="label">Total Rows:</span>
+                        <span class="value">${stats.totalRows.toLocaleString()}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="label">Processing Time:</span>
+                        <span class="value">${this.formatProcessingTime(stats.processingTime)}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="label">Processing Speed:</span>
+                        <span class="value">${stats.rowsPerSecond.toLocaleString()} rows/sec</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="label">Memory Efficient:</span>
+                        <span class="value">✅ Virtual Pagination</span>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        const fileInfo = document.getElementById('fileInfo');
+        const existingStats = fileInfo.querySelector('.performance-stats');
+        if (existingStats) existingStats.remove();
+        
+        fileInfo.insertAdjacentHTML('beforeend', statsHtml);
+    }
+
+    formatProcessingTime(milliseconds) {
+        const seconds = Math.floor(milliseconds / 1000);
+        if (seconds < 60) return `${seconds}s`;
+        
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return `${minutes}m ${seconds % 60}s`;
+        
+        const hours = Math.floor(minutes / 60);
+        return `${hours}h ${minutes % 60}m ${seconds % 60}s`;
     }
 
     createCharts() {
@@ -755,12 +586,10 @@ class MessageFatigueCalculator {
         const totalUsers = this.filteredUsers.length;
         const totalPages = this.getTotalPages();
         const startIndex = (this.currentPage - 1) * this.pageSize;
-        const endIndex = this.pageSize === 'all' ? totalUsers : Math.min(startIndex + parseInt(this.pageSize), totalUsers);
+        const endIndex = Math.min(startIndex + this.pageSize, totalUsers);
         
         // Get current page users
-        const currentPageUsers = this.pageSize === 'all' ? 
-            this.filteredUsers : 
-            this.filteredUsers.slice(startIndex, endIndex);
+        const currentPageUsers = this.filteredUsers.slice(startIndex, endIndex);
 
         // Render table rows
         currentPageUsers.forEach(user => {
@@ -800,12 +629,10 @@ class MessageFatigueCalculator {
         // Calculate pagination
         const totalMessages = this.filteredMessages.length;
         const startIndex = (this.messageCurrentPage - 1) * this.messagePageSize;
-        const endIndex = this.messagePageSize === 'all' ? totalMessages : Math.min(startIndex + parseInt(this.messagePageSize), totalMessages);
+        const endIndex = Math.min(startIndex + this.messagePageSize, totalMessages);
         
         // Get current page messages
-        const currentPageMessages = this.messagePageSize === 'all' ? 
-            this.filteredMessages : 
-            this.filteredMessages.slice(startIndex, endIndex);
+        const currentPageMessages = this.filteredMessages.slice(startIndex, endIndex);
 
         // Render table rows
         currentPageMessages.forEach(message => {
@@ -856,13 +683,12 @@ class MessageFatigueCalculator {
     // Pagination methods
     handlePageSizeChange() {
         const newPageSize = document.getElementById('pageSize').value;
-        this.pageSize = newPageSize === 'all' ? 'all' : parseInt(newPageSize);
+        this.pageSize = parseInt(newPageSize);
         this.currentPage = 1;
         this.renderUserTable();
     }
 
     getTotalPages() {
-        if (this.pageSize === 'all') return 1;
         return Math.ceil(this.filteredUsers.length / this.pageSize);
     }
 
@@ -878,7 +704,7 @@ class MessageFatigueCalculator {
         const totalPages = this.getTotalPages();
         const paginationControls = document.getElementById('paginationControls');
         
-        if (this.pageSize === 'all' || totalPages <= 1) {
+        if (totalPages <= 1) {
             paginationControls.style.display = 'none';
             return;
         }
@@ -1115,13 +941,12 @@ class MessageFatigueCalculator {
 
     handleMessagePageSizeChange() {
         const newPageSize = document.getElementById('messagePageSize').value;
-        this.messagePageSize = newPageSize === 'all' ? 'all' : parseInt(newPageSize);
+        this.messagePageSize = parseInt(newPageSize);
         this.messageCurrentPage = 1;
         this.renderMessageTable();
     }
 
     getMessageTotalPages() {
-        if (this.messagePageSize === 'all') return 1;
         return Math.ceil(this.filteredMessages.length / this.messagePageSize);
     }
 
@@ -1137,7 +962,7 @@ class MessageFatigueCalculator {
         const totalPages = this.getMessageTotalPages();
         const paginationControls = document.getElementById('messagePaginationControls');
         
-        if (this.messagePageSize === 'all' || totalPages <= 1) {
+        if (totalPages <= 1) {
             paginationControls.style.display = 'none';
             return;
         }

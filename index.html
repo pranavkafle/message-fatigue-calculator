@@ -64,117 +64,33 @@
 
         <!-- Results Section -->
         <section class="results-section" id="resultsSection" style="display: none;">
-            <!-- Fatigue Overview -->
-            <div class="fatigue-overview">
-                <h2>📊 Message Fatigue Analysis</h2>
-                <div class="overview-stats">
-                    <div class="overview-item">
-                        <span class="overview-label">Analysis Period:</span>
-                        <span id="analysisPeriod">-</span>
-                    </div>
-                    <div class="overview-item">
-                        <span class="overview-label">Total Messages Analyzed:</span>
-                        <span id="totalAnalyzed">-</span>
-                    </div>
-                    <div class="overview-item">
-                        <span class="overview-label">Unique Recipients:</span>
-                        <span id="uniqueRecipients">-</span>
+            <!-- Summary Cards -->
+            <div class="summary-cards">
+                <div class="card primary">
+                    <h4 id="avgMetricTitle">📊 Avg Messages/User/Day</h4>
+                    <div class="metric" id="avgMetric">-</div>
+                    <div class="time-toggle">
+                        <button class="toggle-btn active" data-period="daily">Daily</button>
+                        <button class="toggle-btn" data-period="weekly">Weekly</button>
+                        <button class="toggle-btn" data-period="monthly">Monthly</button>
                     </div>
                 </div>
-            </div>
-
-            <!-- Primary Metrics (Must Have) -->
-            <div class="metrics-section">
-                <h3>🎯 Primary Fatigue Indicators</h3>
-                <div class="primary-metrics">
-                    <div class="metric-card critical">
-                        <h4>📈 14-Day Message Frequency</h4>
-                        <div class="metric-value" id="messageFrequency">-</div>
-                        <div class="metric-unit">messages/day avg</div>
-                        <div class="metric-status" id="frequencyStatus">-</div>
-                    </div>
-                    <div class="metric-card warning">
-                        <h4>📉 Engagement Decline Rate</h4>
-                        <div class="metric-value" id="engagementDecline">-</div>
-                        <div class="metric-unit">% decline</div>
-                        <div class="metric-status" id="declineStatus">-</div>
-                    </div>
-                    <div class="metric-card danger">
-                        <h4>🚨 Unsubscribe + Spam Rate</h4>
-                        <div class="metric-value" id="churnRate">-</div>
-                        <div class="metric-unit">% of delivered</div>
-                        <div class="metric-status" id="churnStatus">-</div>
-                    </div>
-                    <div class="metric-card info">
-                        <h4>🎯 Churn-to-Open Ratio</h4>
-                        <div class="metric-value" id="churnToOpen">-</div>
-                        <div class="metric-unit">% industry standard</div>
-                        <div class="metric-status" id="churnOpenStatus">-</div>
+                <div class="card warning">
+                    <h4 id="riskMetricTitle">⚠️ High-Risk Users</h4>
+                    <div class="metric" id="riskMetric">-</div>
+                    <div class="risk-toggle">
+                        <button class="risk-btn active" data-risk="high">High</button>
+                        <button class="risk-btn" data-risk="medium">Medium</button>
+                        <button class="risk-btn" data-risk="low">Low</button>
                     </div>
                 </div>
-            </div>
-
-            <!-- Secondary Metrics (Very Useful) -->
-            <div class="metrics-section">
-                <h3>⚡ Secondary Fatigue Metrics</h3>
-                <div class="secondary-metrics">
-                    <div class="metric-card">
-                        <h4>📧 Open Rate</h4>
-                        <div class="metric-value" id="openRate">-</div>
-                        <div class="metric-unit">%</div>
-                    </div>
-                    <div class="metric-card">
-                        <h4>👆 Click-Through Rate</h4>
-                        <div class="metric-value" id="clickRate">-</div>
-                        <div class="metric-unit">%</div>
-                    </div>
-                    <div class="metric-card">
-                        <h4>💰 Conversion Rate</h4>
-                        <div class="metric-value" id="conversionRate">-</div>
-                        <div class="metric-unit">%</div>
-                    </div>
-                    <div class="metric-card">
-                        <h4>⏱️ Avg Time-to-Open</h4>
-                        <div class="metric-value" id="timeToOpen">-</div>
-                        <div class="metric-unit">hours</div>
-                    </div>
-                    <div class="metric-card">
-                        <h4>🎯 Net Engagement Score</h4>
-                        <div class="metric-value" id="netEngagement">-</div>
-                        <div class="metric-unit">score</div>
-                    </div>
-                    <div class="metric-card">
-                        <h4>📋 Topic Unsubscribe Rate</h4>
-                        <div class="metric-value" id="topicUnsubRate">-</div>
-                        <div class="metric-unit">%</div>
-                    </div>
+                <div class="card">
+                    <h4>📈 Total Messages</h4>
+                    <div class="metric" id="totalMessages">-</div>
                 </div>
-            </div>
-
-            <!-- Advanced Metrics (If Needed) -->
-            <div class="metrics-section collapsible">
-                <h3>🔬 Advanced Analytics <button class="toggle-advanced" id="toggleAdvanced">Show</button></h3>
-                <div class="advanced-metrics" id="advancedMetrics" style="display: none;">
-                    <div class="metric-card">
-                        <h4>📊 Message Clustering Risk</h4>
-                        <div class="metric-value" id="clusteringRisk">-</div>
-                        <div class="metric-unit">risk score</div>
-                    </div>
-                    <div class="metric-card">
-                        <h4>📈 Engagement Momentum</h4>
-                        <div class="metric-value" id="engagementMomentum">-</div>
-                        <div class="metric-unit">% change</div>
-                    </div>
-                    <div class="metric-card">
-                        <h4>⚡ Bounce Rate</h4>
-                        <div class="metric-value" id="bounceRate">-</div>
-                        <div class="metric-unit">%</div>
-                    </div>
-                    <div class="metric-card">
-                        <h4>⏰ Avg Inter-Message Gap</h4>
-                        <div class="metric-value" id="interMessageGap">-</div>
-                        <div class="metric-unit">days</div>
-                    </div>
+                <div class="card">
+                    <h4>👥 Unique Users</h4>
+                    <div class="metric" id="uniqueUsers">-</div>
                 </div>
             </div>
 
@@ -203,10 +119,10 @@
                             <option value="low">Low Risk</option>
                         </select>
                         <select id="pageSize" class="filter-select">
-                            <option value="20" selected>20 per page</option>
+                            <option value="10" selected>10 per page</option>
+                            <option value="25">25 per page</option>
                             <option value="50">50 per page</option>
                             <option value="100">100 per page</option>
-                            <option value="all">Show all</option>
                         </select>
                     </div>
                     <div class="table-info">
@@ -264,10 +180,10 @@
                             <option value="transactional">Transactional</option>
                         </select>
                         <select id="messagePageSize" class="filter-select">
-                            <option value="20" selected>20 per page</option>
+                            <option value="10" selected>10 per page</option>
+                            <option value="25">25 per page</option>
                             <option value="50">50 per page</option>
                             <option value="100">100 per page</option>
-                            <option value="all">Show all</option>
                         </select>
                     </div>
                     <div class="table-info">
@@ -325,6 +241,7 @@
 
                 </div>
 
+    <script src="progressive-processor.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
