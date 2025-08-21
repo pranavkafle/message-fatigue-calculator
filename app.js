@@ -1,8 +1,9 @@
-// Message Fatigue Calculator - Main Application
+// Message Fatigue Calculator - Industry Standard Metrics
 class MessageFatigueCalculator {
     constructor() {
         this.data = null;
         this.processedData = null;
+        this.fatigueMetrics = null;
         this.charts = {};
         this.filteredUsers = [];
         this.currentPage = 1;
@@ -16,12 +17,6 @@ class MessageFatigueCalculator {
         this.messagePageSize = 20;
         this.messageSortColumn = null;
         this.messageSortDirection = 'asc';
-        
-        // Time period for metrics display
-        this.currentTimePeriod = 'daily';
-        
-        // Risk level for display
-        this.currentRiskLevel = 'high';
         
         this.initializeEventListeners();
     }
@@ -81,10 +76,8 @@ class MessageFatigueCalculator {
             btn.addEventListener('click', () => this.handleTimePeriodChange(btn.dataset.period));
         });
 
-        // Risk level toggle events
-        document.querySelectorAll('.risk-btn').forEach(btn => {
-            btn.addEventListener('click', () => this.handleRiskLevelChange(btn.dataset.risk));
-        });
+        // Advanced metrics toggle
+        document.getElementById('toggleAdvanced').addEventListener('click', this.toggleAdvancedMetrics.bind(this));
 
         // Export events
         document.getElementById('exportCsv').addEventListener('click', this.exportCSV.bind(this));
@@ -193,18 +186,256 @@ class MessageFatigueCalculator {
     calculateFatigueMetrics() {
         if (!this.data || this.data.length === 0) return;
 
-        this.showStatus('processing', 'Calculating fatigue metrics...');
+        this.showStatus('processing', 'Calculating comprehensive fatigue metrics...');
 
-        // Parse dates and group by user
+        // Parse and validate data
+        const validData = this.data.filter(row => {
+            const email = row.email || row.recipient;
+            const deliveredDate = row.delivered_RFC3339 ? new Date(row.delivered_RFC3339) : null;
+            return email && deliveredDate && !isNaN(deliveredDate.getTime());
+        });
+
+        if (validData.length === 0) {
+            this.showStatus('error', 'No valid data found for analysis');
+            return;
+        }
+
+        // Calculate all industry-standard fatigue metrics
+        this.fatigueMetrics = this.calculateComprehensiveMetrics(validData);
+        this.processedData = this.processDataForTables(validData);
+        
+        this.displayFatigueResults();
+    }
+
+    calculateComprehensiveMetrics(data) {
+        const metrics = {};
+        
+        // Basic counts
+        const totalDelivered = data.length;
+        const totalOpened = data.filter(row => row.opened_RFC3339).length;
+        const totalClicked = data.filter(row => row.clicked_RFC3339).length;
+        const totalConverted = data.filter(row => row.converted_RFC3339).length;
+        const totalUnsubscribed = data.filter(row => row.unsubscribed_RFC3339).length;
+        const totalSpammed = data.filter(row => row.spammed_RFC3339).length;
+        const totalBounced = data.filter(row => row.bounced_RFC3339).length;
+        const totalTopicUnsub = data.filter(row => row.topic_unsubscribed_RFC3339).length;
+        
+        // Date range analysis
+        const dates = data.map(row => new Date(row.delivered_RFC3339)).sort((a, b) => a - b);
+        const minDate = dates[0];
+        const maxDate = dates[dates.length - 1];
+        const daysDiff = Math.max(1, (maxDate - minDate) / (1000 * 60 * 60 * 24));
+        
+        // Unique recipients
+        const uniqueRecipients = new Set(data.map(row => row.email || row.recipient)).size;
+        
+        // 1. Message Frequency (14-day rolling average)
+        metrics.messageFrequency = this.calculate14DayFrequency(data);
+        
+        // 2. Open Rate
+        metrics.openRate = totalDelivered > 0 ? (totalOpened / totalDelivered * 100) : 0;
+        
+        // 3. Click-Through Rate
+        metrics.clickRate = totalDelivered > 0 ? (totalClicked / totalDelivered * 100) : 0;
+        
+        // 4. Conversion Rate
+        metrics.conversionRate = totalDelivered > 0 ? (totalConverted / totalDelivered * 100) : 0;
+        
+        // 5. Unsubscribe + Spam Rate (Critical fatigue indicator)
+        metrics.churnRate = totalDelivered > 0 ? ((totalUnsubscribed + totalSpammed) / totalDelivered * 100) : 0;
+        
+        // 6. Churn-to-Open Ratio
+        metrics.churnToOpen = totalOpened > 0 ? ((totalUnsubscribed + totalSpammed) / totalOpened * 100) : 0;
+        
+        // 7. Bounce Rate
+        metrics.bounceRate = totalDelivered > 0 ? (totalBounced / totalDelivered * 100) : 0;
+        
+        // 8. Topic Unsubscribe Rate
+        metrics.topicUnsubRate = totalDelivered > 0 ? (totalTopicUnsub / totalDelivered * 100) : 0;
+        
+        // 9. Time-to-Open Analysis
+        metrics.timeToOpen = this.calculateTimeToOpen(data);
+        
+        // 10. Net Engagement Score
+        metrics.netEngagement = this.calculateNetEngagementScore(totalOpened, totalClicked, totalConverted, totalUnsubscribed, totalSpammed);
+        
+        // 11. Engagement Decline Rate
+        metrics.engagementDecline = this.calculateEngagementDecline(data);
+        
+        // 12. Message Clustering Risk
+        metrics.clusteringRisk = this.calculateClusteringRisk(data);
+        
+        // 13. Engagement Momentum
+        metrics.engagementMomentum = this.calculateEngagementMomentum(data);
+        
+        // 14. Inter-Message Gap
+        metrics.interMessageGap = this.calculateInterMessageGap(data);
+        
+        // Analysis period and summary
+        metrics.analysisPeriod = `${minDate.toLocaleDateString()} - ${maxDate.toLocaleDateString()}`;
+        metrics.totalAnalyzed = totalDelivered;
+        metrics.uniqueRecipients = uniqueRecipients;
+        metrics.daysDiff = daysDiff;
+        
+        return metrics;
+    }
+
+    calculate14DayFrequency(data) {
+        // Group messages by 14-day windows
+        const sortedData = data.sort((a, b) => new Date(a.delivered_RFC3339) - new Date(b.delivered_RFC3339));
+        const windowSize = 14 * 24 * 60 * 60 * 1000; // 14 days in milliseconds
+        
+        if (sortedData.length === 0) return 0;
+        
+        const startDate = new Date(sortedData[0].delivered_RFC3339);
+        const endDate = new Date(sortedData[sortedData.length - 1].delivered_RFC3339);
+        
+        let totalFrequency = 0;
+        let windowCount = 0;
+        
+        for (let windowStart = startDate.getTime(); windowStart <= endDate.getTime(); windowStart += windowSize) {
+            const windowEnd = windowStart + windowSize;
+            const messagesInWindow = sortedData.filter(row => {
+                const msgTime = new Date(row.delivered_RFC3339).getTime();
+                return msgTime >= windowStart && msgTime < windowEnd;
+            }).length;
+            
+            if (messagesInWindow > 0) {
+                totalFrequency += messagesInWindow / 14; // messages per day in this window
+                windowCount++;
+            }
+        }
+        
+        return windowCount > 0 ? Math.round((totalFrequency / windowCount) * 100) / 100 : 0;
+    }
+
+    calculateTimeToOpen(data) {
+        const openTimes = data
+            .filter(row => row.delivered_RFC3339 && row.opened_RFC3339)
+            .map(row => {
+                const delivered = new Date(row.delivered_RFC3339);
+                const opened = new Date(row.opened_RFC3339);
+                return (opened - delivered) / (1000 * 60 * 60); // hours
+            })
+            .filter(time => time >= 0 && time <= 168); // Filter realistic times (0-168 hours)
+        
+        if (openTimes.length === 0) return 0;
+        
+        const avgTime = openTimes.reduce((sum, time) => sum + time, 0) / openTimes.length;
+        return Math.round(avgTime * 100) / 100;
+    }
+
+    calculateNetEngagementScore(opens, clicks, conversions, unsubscribes, spam) {
+        // Weighted formula: positive actions vs negative actions
+        const positiveScore = opens + (2 * clicks) + (3 * conversions);
+        const negativeScore = (5 * unsubscribes) + (10 * spam);
+        return Math.round((positiveScore - negativeScore) * 100) / 100;
+    }
+
+    calculateEngagementDecline(data) {
+        // Compare first half vs second half engagement rates
+        const sortedData = data.sort((a, b) => new Date(a.delivered_RFC3339) - new Date(b.delivered_RFC3339));
+        const midPoint = Math.floor(sortedData.length / 2);
+        
+        const firstHalf = sortedData.slice(0, midPoint);
+        const secondHalf = sortedData.slice(midPoint);
+        
+        const firstHalfEngagement = this.calculateEngagementRate(firstHalf);
+        const secondHalfEngagement = this.calculateEngagementRate(secondHalf);
+        
+        if (firstHalfEngagement === 0) return 0;
+        
+        const decline = ((firstHalfEngagement - secondHalfEngagement) / firstHalfEngagement) * 100;
+        return Math.round(decline * 100) / 100;
+    }
+
+    calculateEngagementRate(data) {
+        const delivered = data.length;
+        const engaged = data.filter(row => row.opened_RFC3339 || row.clicked_RFC3339).length;
+        return delivered > 0 ? (engaged / delivered) : 0;
+    }
+
+    calculateClusteringRisk(data) {
+        // Analyze daily message density
+        const dailyCounts = {};
+        
+        data.forEach(row => {
+            const date = new Date(row.delivered_RFC3339).toDateString();
+            dailyCounts[date] = (dailyCounts[date] || 0) + 1;
+        });
+        
+        const counts = Object.values(dailyCounts);
+        if (counts.length === 0) return 0;
+        
+        const maxDensity = Math.max(...counts);
+        const avgDensity = counts.reduce((sum, count) => sum + count, 0) / counts.length;
+        const stdDev = Math.sqrt(counts.reduce((sum, count) => sum + Math.pow(count - avgDensity, 2), 0) / counts.length);
+        
+        return Math.round((maxDensity + stdDev) * 100) / 100;
+    }
+
+    calculateEngagementMomentum(data) {
+        // Compare last week vs previous week
+        const sortedData = data.sort((a, b) => new Date(b.delivered_RFC3339) - new Date(a.delivered_RFC3339));
+        const weekInMs = 7 * 24 * 60 * 60 * 1000;
+        const now = new Date(sortedData[0].delivered_RFC3339);
+        
+        const lastWeek = sortedData.filter(row => {
+            const msgTime = new Date(row.delivered_RFC3339);
+            return (now - msgTime) <= weekInMs;
+        });
+        
+        const previousWeek = sortedData.filter(row => {
+            const msgTime = new Date(row.delivered_RFC3339);
+            const timeDiff = now - msgTime;
+            return timeDiff > weekInMs && timeDiff <= (2 * weekInMs);
+        });
+        
+        const lastWeekEngagement = this.calculateEngagementRate(lastWeek);
+        const previousWeekEngagement = this.calculateEngagementRate(previousWeek);
+        
+        if (previousWeekEngagement === 0) return 0;
+        
+        const momentum = ((lastWeekEngagement - previousWeekEngagement) / previousWeekEngagement) * 100;
+        return Math.round(momentum * 100) / 100;
+    }
+
+    calculateInterMessageGap(data) {
+        // Calculate average time between messages per user
+        const userMessages = {};
+        
+        data.forEach(row => {
+            const email = row.email || row.recipient;
+            if (!userMessages[email]) userMessages[email] = [];
+            userMessages[email].push(new Date(row.delivered_RFC3339));
+        });
+        
+        let totalGaps = [];
+        
+        Object.values(userMessages).forEach(messages => {
+            if (messages.length > 1) {
+                messages.sort((a, b) => a - b);
+                for (let i = 1; i < messages.length; i++) {
+                    const gap = (messages[i] - messages[i-1]) / (1000 * 60 * 60 * 24); // days
+                    totalGaps.push(gap);
+                }
+            }
+        });
+        
+        if (totalGaps.length === 0) return 0;
+        
+        const avgGap = totalGaps.reduce((sum, gap) => sum + gap, 0) / totalGaps.length;
+        return Math.round(avgGap * 100) / 100;
+    }
+
+    processDataForTables(data) {
+        // Keep existing table processing for compatibility
         const userMessages = {};
         const messageData = {};
-        let minDate = new Date();
-        let maxDate = new Date(0);
-
-        this.data.forEach(row => {
+        
+        data.forEach(row => {
             const email = row.email || row.recipient;
-            const customerId = row.customer_id;
-            const createdDate = new Date(row.created_RFC3339);
+            const deliveredDate = new Date(row.delivered_RFC3339);
             
             // Determine message type and name
             let messageName = '';
@@ -227,23 +458,16 @@ class MessageFatigueCalculator {
                 messageType = 'unknown';
             }
 
-            if (!email || !customerId || isNaN(createdDate.getTime())) return;
-
-            // Track date range
-            if (createdDate < minDate) minDate = createdDate;
-            if (createdDate > maxDate) maxDate = createdDate;
-
             // Group by user
             const userKey = email;
             if (!userMessages[userKey]) {
                 userMessages[userKey] = {
                     email: email,
-                    customerId: customerId,
                     messages: []
                 };
             }
             userMessages[userKey].messages.push({
-                date: createdDate,
+                date: deliveredDate,
                 message: messageName,
                 type: messageType
             });
@@ -262,38 +486,32 @@ class MessageFatigueCalculator {
             messageData[messageKey].uniqueRecipients.add(email);
         });
 
-        // Calculate metrics for each user
+        // Calculate user metrics
         const userAnalysis = Object.values(userMessages).map(user => {
             const messages = user.messages;
             const totalMessages = messages.length;
             
-            // Calculate date range for this user
             const userMinDate = new Date(Math.min(...messages.map(m => m.date)));
             const userMaxDate = new Date(Math.max(...messages.map(m => m.date)));
             const daysDiff = Math.max(1, (userMaxDate - userMinDate) / (1000 * 60 * 60 * 24));
             
             const dailyAvg = totalMessages / daysDiff;
-            const weeklyAvg = dailyAvg * 7;
-            const monthlyAvg = dailyAvg * 30;
             
-            // Risk scoring
             let riskLevel = 'low';
             if (dailyAvg > 3) riskLevel = 'high';
             else if (dailyAvg > 1) riskLevel = 'medium';
 
             return {
                 email: user.email,
-                customerId: user.customerId,
                 totalMessages,
                 dailyAvg: Math.round(dailyAvg * 100) / 100,
-                weeklyAvg: Math.round(weeklyAvg * 100) / 100,
-                monthlyAvg: Math.round(monthlyAvg * 100) / 100,
+                weeklyAvg: Math.round(dailyAvg * 7 * 100) / 100,
+                monthlyAvg: Math.round(dailyAvg * 30 * 100) / 100,
                 riskLevel,
                 messages: user.messages
             };
         });
 
-        // Calculate message metrics
         const messageAnalysis = Object.values(messageData).map(message => ({
             name: message.name,
             type: message.type,
@@ -302,20 +520,96 @@ class MessageFatigueCalculator {
             avgFrequency: Math.round((message.messageCount / message.uniqueRecipients.size) * 100) / 100
         }));
 
-        // Store processed data
-        this.processedData = {
+        return {
             users: userAnalysis,
-            messages: messageAnalysis,
-            dateRange: { min: minDate, max: maxDate },
-            summary: {
-                totalMessages: this.data.length,
-                uniqueUsers: userAnalysis.length,
-                avgPerDay: Math.round((userAnalysis.reduce((sum, user) => sum + user.dailyAvg, 0) / userAnalysis.length) * 100) / 100,
-                highFreqUsers: userAnalysis.filter(user => user.riskLevel === 'high').length
-            }
+            messages: messageAnalysis
         };
+    }
 
-        this.displayResults();
+    displayFatigueResults() {
+        // Update overview
+        document.getElementById('analysisPeriod').textContent = this.fatigueMetrics.analysisPeriod;
+        document.getElementById('totalAnalyzed').textContent = this.fatigueMetrics.totalAnalyzed.toLocaleString();
+        document.getElementById('uniqueRecipients').textContent = this.fatigueMetrics.uniqueRecipients.toLocaleString();
+
+        // Update primary metrics
+        this.updateMetricCard('messageFrequency', this.fatigueMetrics.messageFrequency, this.getFrequencyStatus(this.fatigueMetrics.messageFrequency));
+        this.updateMetricCard('engagementDecline', Math.abs(this.fatigueMetrics.engagementDecline), this.getDeclineStatus(this.fatigueMetrics.engagementDecline));
+        this.updateMetricCard('churnRate', this.fatigueMetrics.churnRate, this.getChurnStatus(this.fatigueMetrics.churnRate));
+        this.updateMetricCard('churnToOpen', this.fatigueMetrics.churnToOpen, this.getChurnOpenStatus(this.fatigueMetrics.churnToOpen));
+
+        // Update secondary metrics
+        document.getElementById('openRate').textContent = this.fatigueMetrics.openRate.toFixed(1);
+        document.getElementById('clickRate').textContent = this.fatigueMetrics.clickRate.toFixed(1);
+        document.getElementById('conversionRate').textContent = this.fatigueMetrics.conversionRate.toFixed(1);
+        document.getElementById('timeToOpen').textContent = this.fatigueMetrics.timeToOpen.toFixed(1);
+        document.getElementById('netEngagement').textContent = this.fatigueMetrics.netEngagement.toLocaleString();
+        document.getElementById('topicUnsubRate').textContent = this.fatigueMetrics.topicUnsubRate.toFixed(2);
+
+        // Update advanced metrics
+        document.getElementById('clusteringRisk').textContent = this.fatigueMetrics.clusteringRisk.toFixed(1);
+        document.getElementById('engagementMomentum').textContent = this.fatigueMetrics.engagementMomentum.toFixed(1);
+        document.getElementById('bounceRate').textContent = this.fatigueMetrics.bounceRate.toFixed(1);
+        document.getElementById('interMessageGap').textContent = this.fatigueMetrics.interMessageGap.toFixed(1);
+
+        // Update file info
+        document.getElementById('totalRecords').textContent = this.data.length.toLocaleString();
+        document.getElementById('dateRange').textContent = this.fatigueMetrics.analysisPeriod;
+
+        // Create charts and tables
+        this.createCharts();
+        this.populateUserTable();
+        this.populateMessageTable();
+
+        // Show results
+        document.getElementById('resultsSection').style.display = 'block';
+        this.showStatus('success', 'Comprehensive fatigue analysis complete!');
+    }
+
+    updateMetricCard(metricId, value, status) {
+        document.getElementById(metricId).textContent = value.toFixed(2);
+        const statusElement = document.getElementById(metricId.replace(/([A-Z])/g, (match, p1) => p1.toLowerCase()) + 'Status');
+        if (statusElement) {
+            statusElement.textContent = status.text;
+            statusElement.className = `metric-status ${status.class}`;
+        }
+    }
+
+    getFrequencyStatus(frequency) {
+        if (frequency > 1) return { text: 'High Risk', class: 'critical' };
+        if (frequency > 0.5) return { text: 'Moderate', class: 'warning' };
+        return { text: 'Good', class: 'good' };
+    }
+
+    getDeclineStatus(decline) {
+        if (decline > 20) return { text: 'Critical', class: 'critical' };
+        if (decline > 10) return { text: 'Warning', class: 'warning' };
+        return { text: 'Stable', class: 'good' };
+    }
+
+    getChurnStatus(churnRate) {
+        if (churnRate > 0.5) return { text: 'Critical', class: 'critical' };
+        if (churnRate > 0.2) return { text: 'Warning', class: 'warning' };
+        return { text: 'Good', class: 'good' };
+    }
+
+    getChurnOpenStatus(churnToOpen) {
+        if (churnToOpen > 2) return { text: 'High Fatigue', class: 'critical' };
+        if (churnToOpen > 1) return { text: 'Moderate', class: 'warning' };
+        return { text: 'Healthy', class: 'good' };
+    }
+
+    toggleAdvancedMetrics() {
+        const advancedSection = document.getElementById('advancedMetrics');
+        const toggleBtn = document.getElementById('toggleAdvanced');
+        
+        if (advancedSection.style.display === 'none') {
+            advancedSection.style.display = 'grid';
+            toggleBtn.textContent = 'Hide';
+        } else {
+            advancedSection.style.display = 'none';
+            toggleBtn.textContent = 'Show';
+        }
     }
 
     displayResults() {
