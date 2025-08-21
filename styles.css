@@ -678,13 +678,7 @@ tr:hover {
     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
 
-/* Footer */
-.footer {
-    text-align: center;
-    margin-top: 40px;
-    color: white;
-    opacity: 0.8;
-}
+
 
 /* Loading Animation */
 .loading {
